@@ -3,7 +3,12 @@
     "version": "1.0.0",
     "description": "Visa Interview Prep App - Monorepo (Optional)",
     "scripts": {
-      "start:frontend": "cd frontend && npm start",
-      "start:backend": "cd backend && node server.js"
+        "start": "npm run start:env && concurrently \"npm run start:frontend\" \"npm run start:backend\"",
+        "start:frontend": "cd frontend && npm start",
+        "start:backend": "cd backend && node server.js",
+        "start:env": "cp .env backend/.env"
+    },
+    "devDependencies": {
+        "concurrently": "^9.1.2"
     }
 }

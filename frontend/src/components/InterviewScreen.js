@@ -3,14 +3,14 @@ import AgentResponse from './AgentResponse';
 import UserInput from './UserInput';
 import { mockAgentService } from '../services/mockAgentService'; // Import mock service
 
-function InterviewScreen({ selectedCountry }) {
+function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack }) { // Add onGoBack prop
   const [interviewQuestions, setInterviewQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [agentResponse, setAgentResponse] = useState('');
 
   useEffect(() => {
     // For MVP, hardcoded questions for US F1 Visa
-    if (selectedCountry === 'US_F1') {
+    if (selectedCountry === 'US' && selectedVisaType === 'F1') {
       setInterviewQuestions([
         "What are your plans after completing your studies in the US?",
         "Why did you choose to study in the United States?",
@@ -18,8 +18,11 @@ function InterviewScreen({ selectedCountry }) {
         "What is your intended major of study?",
         "Where do you plan to stay in the United States?",
       ]);
+    } else {
+      setInterviewQuestions([]);
+      setAgentResponse("There are no questions for this selection.")
     }
-  }, [selectedCountry]);
+  }, [selectedCountry, selectedVisaType]);
 
   const handleUserResponse = async (userResponse) => {
     if (currentQuestionIndex < interviewQuestions.length) {
@@ -41,7 +44,10 @@ function InterviewScreen({ selectedCountry }) {
 
   return (
     <div>
-      <h2>Visa Interview Simulation ({selectedCountry})</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2>Visa Interview Simulation ({selectedCountry} - {selectedVisaType})</h2>
+        <button onClick={onGoBack}>Go Back</button> {/* Back Button */}
+      </div>
       {currentQuestion && !isInterviewOver && (
         <div>
           <AgentResponse question={currentQuestion} response={agentResponse} />
@@ -51,6 +57,9 @@ function InterviewScreen({ selectedCountry }) {
       )}
       {isInterviewOver && (
         <p><b>Interview Simulation Complete.</b></p>
+      )}
+      {!currentQuestion && !isInterviewOver && (
+        <p>{agentResponse}</p>
       )}
     </div>
   );
