@@ -1,0 +1,233 @@
+/* InterviewPage.css */
+
+.interview-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: #f8fafc;
+  }
+  
+  .interview-header {
+    background-color: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 1rem 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+  
+  .header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .logo {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+  }
+  
+  .logo-symbol {
+    height: 32px;
+    margin-right: 0.5rem;
+  }
+  
+  .logo-text {
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: #1e40af;
+  }
+  
+  .interview-main {
+    flex: 1;
+    padding: 3rem 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  
+  .animate-in {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  .animate-out {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+  
+  .page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 1rem;
+    color: #1e293b;
+  }
+  
+  .gradient-text {
+    background-image: linear-gradient(90deg, #1e40af, #3b82f6);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    display: inline;
+  }
+  
+  .page-subtitle {
+    font-size: 1.125rem;
+    text-align: center;
+    color: #64748b;
+    margin-bottom: 3rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  .selection-container {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    padding: 2rem;
+    max-width: 800px;
+    margin: 0 auto 3rem;
+  }
+  
+  .interview-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  .info-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .info-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+  }
+  
+  .info-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background-color: #e0e7ff;
+    border-radius: 50%;
+    margin-bottom: 1rem;
+  }
+  
+  .info-icon svg {
+    width: 24px;
+    height: 24px;
+    stroke: #4f46e5;
+  }
+  
+  .info-card h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: #1e293b;
+  }
+  
+  .info-card p {
+    color: #64748b;
+    line-height: 1.5;
+  }
+  
+  .loading-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 0;
+  }
+  
+  .loading-screen h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 2rem;
+    color: #1e293b;
+  }
+  
+  .loading-bar-container {
+    width: 100%;
+    max-width: 500px;
+    height: 8px;
+    background-color: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+  
+  .loading-bar {
+    height: 100%;
+    background-image: linear-gradient(90deg, #1e40af, #3b82f6);
+    border-radius: 4px;
+    transition: width 0.2s ease;
+  }
+  
+  .loading-screen p {
+    color: #64748b;
+  }
+  
+  .interview-footer {
+    background-color: #ffffff;
+    border-top: 1px solid #e5e7eb;
+    padding: 1rem 0;
+    text-align: center;
+    color: #64748b;
+    font-size: 0.875rem;
+  }
+  
+  /* Button styles */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+  
+  .btn-primary {
+    background-color: #1e40af;
+    color: #ffffff;
+    border: none;
+  }
+  
+  .btn-primary:hover {
+    background-color: #1e3a8a;
+  }
+  
+  .btn-outline {
+    background-color: transparent;
+    color: #1e40af;
+    border: 2px solid #1e40af;
+  }
+  
+  .btn-outline:hover {
+    background-color: #f0f5ff;
+  }
+  
+  /* Responsive styles */
+  @media (max-width: 768px) {
+    .interview-info {
+      grid-template-columns: 1fr;
+    }
+    
+    .page-title {
+      font-size: 2rem;
+    }
+  }

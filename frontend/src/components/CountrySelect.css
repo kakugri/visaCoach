@@ -1,0 +1,56 @@
+/* CountrySelect.css */
+.country-visa-container {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .form-title {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 1.5rem;
+  }
+  
+  .form-group {
+    margin-bottom: 15px;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #34495e;
+  }
+  
+  .select-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+    background-color: white;
+    cursor: pointer;
+  }
+  
+  .select-input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+  }
+  
+  .selection-summary {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #e1f5fe;
+    border-radius: 4px;
+    border-left: 4px solid #03a9f4;
+  }
+  
+  .selection-summary p {
+    margin: 0;
+    color: #01579b;
+  }
