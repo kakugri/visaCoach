@@ -10,5 +10,14 @@
     },
     "devDependencies": {
         "concurrently": "^9.1.2"
+    },
+    "dependencies": {
+        "@google/generative-ai": "^0.23.0",
+        "axios": "^1.8.1",
+        "bcrypt": "^5.1.1",
+        "chart.js": "^4.4.8",
+        "jsonwebtoken": "^9.0.2",
+        "mongoose": "^8.11.0",
+        "react-chartjs-2": "^5.3.0"
     }
 }

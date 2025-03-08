@@ -1,56 +1,313 @@
 /* CountrySelect.css */
+@import url('https://cdn.jsdelivr.net/npm/flag-icons@6.6.6/css/flag-icons.min.css');
+
 .country-visa-container {
-    max-width: 500px;
-    margin: 0 auto;
-    padding: 20px;
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.form-title {
+  color: #1e293b;
+  margin-bottom: 2rem;
+  text-align: center;
+  font-size: 1.75rem;
+  font-weight: 700;
+  position: relative;
+}
+
+.form-title::after {
+  content: '';
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 4px;
+  background-image: linear-gradient(90deg, #1e40af, #3b82f6);
+  border-radius: 2px;
+}
+
+/* Country Selection */
+.country-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.country-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem 1rem;
+  background-color: #f8fafc;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  transition: all 0.25s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.country-card:hover {
+  transform: translateY(-4px);
+  background-color: #f0f9ff;
+  box-shadow: 0 8px 16px rgba(59, 130, 246, 0.1);
+}
+
+.country-card.selected {
+  background-color: #ebf8ff;
+  border-color: #3b82f6;
+  box-shadow: 0 8px 16px rgba(59, 130, 246, 0.15);
+}
+
+.country-card.selected::before {
+  content: '✓';
+  position: absolute;
+  top: 5px;
+  right: 8px;
+  font-size: 14px;
+  color: #3b82f6;
+}
+
+.country-flag {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.country-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #1e293b;
+  text-align: center;
+}
+
+/* Visa Type Selection */
+.visa-type-container {
+  background-color: #f8f9fb;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.visa-type-container.expanded {
+  max-height: 800px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.visa-section-title {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  color: #1e293b;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.section-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background-color: #3b82f6;
+  color: white;
+  border-radius: 50%;
+  margin-right: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.visa-type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.visa-type-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem 1rem;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  transition: all 0.25s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+.visa-type-card:hover {
+  transform: translateY(-4px);
+  border-color: #bfdbfe;
+  box-shadow: 0 8px 16px rgba(59, 130, 246, 0.1);
+}
+
+.visa-type-card.selected {
+  background-color: #ebf8ff;
+  border-color: #3b82f6;
+  box-shadow: 0 8px 16px rgba(59, 130, 246, 0.15);
+}
+
+.visa-type-card.selected::before {
+  content: '✓';
+  position: absolute;
+  top: 5px;
+  right: 8px;
+  font-size: 14px;
+  color: #3b82f6;
+}
+
+.visa-icon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.visa-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #1e293b;
+  text-align: center;
+}
+
+/* Info Tooltip */
+.info-tooltip {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 400px;
+  padding: 1rem 1.5rem;
+  background-color: #1e293b;
+  color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  z-index: 100;
+  animation: fadeIn 0.3s ease;
+}
+
+.info-tooltip p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-50%, 10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* Selection Summary */
+.selection-summary {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: #f0f9ff;
+  border-radius: 12px;
+  border-left: 4px solid #3b82f6;
+  animation: fadeIn 0.5s ease;
+}
+
+.summary-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.summary-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #3b82f6;
+  color: white;
+  font-weight: bold;
+  margin-right: 0.75rem;
+}
+
+.summary-header h3 {
+  margin: 0;
+  color: #1e293b;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.summary-details {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.summary-country, .summary-visa {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.summary-country span:first-child {
+  font-size: 1.5rem;
+}
+
+.visa-icon-small {
+  font-size: 1.25rem;
+}
+
+.ready-message {
+  margin-top: 1rem;
+  color: #3b82f6;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .country-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   }
   
-  .form-title {
-    color: #2c3e50;
-    margin-bottom: 20px;
-    text-align: center;
-    font-size: 1.5rem;
+  .visa-type-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   }
   
-  .form-group {
-    margin-bottom: 15px;
+  .summary-details {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .country-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
   
-  .form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 600;
-    color: #34495e;
+  .visa-type-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
   
-  .select-input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 16px;
-    background-color: white;
-    cursor: pointer;
+  .country-visa-container {
+    padding: 1.5rem;
   }
-  
-  .select-input:focus {
-    outline: none;
-    border-color: #3498db;
-    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-  }
-  
-  .selection-summary {
-    margin-top: 20px;
-    padding: 10px;
-    background-color: #e1f5fe;
-    border-radius: 4px;
-    border-left: 4px solid #03a9f4;
-  }
-  
-  .selection-summary p {
-    margin: 0;
-    color: #01579b;
-  }
+}

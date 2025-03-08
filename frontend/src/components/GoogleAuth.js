@@ -1,7 +1,7 @@
 import React from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 
-function GoogleAuth({ onLoginSuccess, onLoginError }) { // Add onLoginError prop
+function GoogleAuth({ onLoginSuccess, onLoginError }) {
   const handleLoginSuccess = async (credentialResponse) => {
     console.log('Google Login Success:', credentialResponse);
 
@@ -18,7 +18,8 @@ function GoogleAuth({ onLoginSuccess, onLoginError }) { // Add onLoginError prop
       if (backendResponse.ok) {
         const data = await backendResponse.json();
         console.log('Backend verification successful:', data);
-        onLoginSuccess(); // Notify parent that login was successful
+        localStorage.setItem('token', data.token);
+        onLoginSuccess();
       } else {
         const errorData = await backendResponse.json();
         console.error('Backend verification failed:', errorData);
