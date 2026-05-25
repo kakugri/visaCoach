@@ -109,6 +109,11 @@ const getQuestionSetNotice = (questionSetMeta) => {
   return 'Personalized questions could not be prepared. Using the built-in question bank.';
 };
 
+const countFilledContextFields = (context = {}) => (
+  ['homeCountry', 'institutionOrHost', 'programOrPurpose', 'fundingSource', 'returnPlan', 'notes']
+    .filter((field) => String(context[field] || '').trim()).length
+);
+
 function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = null, onGoBack }) {
   // State variables
   const [interviewQuestions, setInterviewQuestions] = useState([]);
@@ -520,6 +525,7 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
       sourceReason: usePersonalizedQuestions ? 'error' : 'static',
       model: 'local-question-bank',
     };
+    let preparedQuestionCount = interviewQuestions.length || SESSION_QUESTION_LIMIT;
 
     try {
       if (usePersonalizedQuestions) {
@@ -534,7 +540,9 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
         );
 
         if (generatedQuestionSet.questions.length) {
-          setInterviewQuestions(generatedQuestionSet.questions.slice(0, SESSION_QUESTION_LIMIT));
+          const generatedQuestions = generatedQuestionSet.questions.slice(0, SESSION_QUESTION_LIMIT);
+          setInterviewQuestions(generatedQuestions);
+          preparedQuestionCount = generatedQuestions.length;
         }
 
         nextQuestionSetMeta = {
@@ -562,6 +570,17 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
     setShowPrep(false);
     setPostSessionConfidence(userConfidence);
     setIsPreparingQuestions(false);
+    trackEvent('question_set_prepared', {
+      country: selectedCountry,
+      visaType: selectedVisaType,
+      questionSource: nextQuestionSetMeta.source,
+      questionSourceReason: nextQuestionSetMeta.sourceReason,
+      model: nextQuestionSetMeta.model,
+      personalizedQuestions: usePersonalizedQuestions,
+      questionCount: preparedQuestionCount,
+      contextFieldCount: countFilledContextFields(cleanContext),
+      concernCount: userNeeds.length,
+    });
     trackEvent('session_started', {
       sessionId: nextSessionId,
       country: selectedCountry,
@@ -570,6 +589,7 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
       confidence: userConfidence,
       concerns: userNeeds,
       questionSource: nextQuestionSetMeta.source,
+      questionSourceReason: nextQuestionSetMeta.sourceReason,
     });
     setAgentResponse("Welcome to your practice session. I will ask five visa interview-style questions. Answer honestly and concretely, as you would at the appointment.");
   };

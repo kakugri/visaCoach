@@ -313,7 +313,7 @@ Purpose: make saved profiles useful without slowing down no-login practice.
 - M7.4 Profile usefulness polish: complete for current scope.
   - Show clearer saved-profile completeness state.
   - Make it obvious when a saved profile will prefill a practice session.
-- M7.5 Personalization quality loop: later.
+- M7.5 Personalization quality loop: complete for current scope.
   - Use beta analytics and feedback to learn whether personalized questions are actually better than the question bank.
 
 ### M8.x: Expansion Beyond Visa Interviews
@@ -326,7 +326,7 @@ Purpose: avoid premature sprawl while preparing the architecture for later inter
 
 Immediate next build priorities:
 
-- Start M7.5 personalization quality loop.
+- Deploy latest M5/M7 polish and run production smoke.
 - Watch first real usage for Gemini quota pressure and account/session error rates.
 - Configure Uptime Kuma checks from `deploy/oracle-traefik/MONITORING.md`.
 - Rotate exposed Gemini keys at the end of the current build/deploy cycle.

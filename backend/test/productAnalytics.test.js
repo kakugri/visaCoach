@@ -23,6 +23,10 @@ test('sanitizeProperties keeps only allowed non-sensitive fields', () => {
     answer: 'private answer should not be logged',
     sessionContext: { notes: 'private notes' },
     concerns: ['documentation', 'english', { unsafe: true }],
+    contextFieldCount: 5,
+    personalizedQuestions: true,
+    questionSourceReason: 'network',
+    questionCount: 5,
     readinessScore: 82,
   });
 
@@ -31,6 +35,10 @@ test('sanitizeProperties keeps only allowed non-sensitive fields', () => {
     visaType: 'F1',
     source: 'gemini',
     concerns: ['documentation', 'english'],
+    contextFieldCount: 5,
+    personalizedQuestions: true,
+    questionSourceReason: 'network',
+    questionCount: 5,
     readinessScore: 82,
   });
 });

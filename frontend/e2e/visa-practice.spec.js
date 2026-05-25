@@ -571,6 +571,17 @@ test('starts a practice session from the prep screen', async ({ page }) => {
   await expect(page.getByText('Welcome to your practice session')).toBeVisible();
   await expect(page.getByText('Question 1 of 5')).toBeVisible();
   await expect(page.getByText('Questions: Gemini · test-question-model')).toBeVisible();
+  const events = await page.evaluate(() => JSON.parse(localStorage.getItem('visaCoach:analyticsEvents') || '[]'));
+  const questionEvent = events.find((event) => event.eventName === 'question_set_prepared');
+  expect(questionEvent.properties).toMatchObject({
+    country: 'US',
+    visaType: 'F1',
+    questionSource: 'gemini',
+    model: 'test-question-model',
+    personalizedQuestions: true,
+    questionCount: 5,
+    contextFieldCount: 5,
+  });
   await expectNoHorizontalOverflow(page);
 });
 
@@ -591,6 +602,14 @@ test('uses the question bank with a visible notice when personalized questions f
   await expect(page.getByRole('status')).toContainText('Personalized questions are unavailable right now');
   await expect(page.getByText('Questions: Question bank')).toBeVisible();
   await expect(page.getByText('Question 1 of 5')).toBeVisible();
+  const events = await page.evaluate(() => JSON.parse(localStorage.getItem('visaCoach:analyticsEvents') || '[]'));
+  const questionEvent = events.find((event) => event.eventName === 'question_set_prepared');
+  expect(questionEvent.properties).toMatchObject({
+    questionSource: 'local',
+    questionSourceReason: 'network',
+    personalizedQuestions: true,
+    contextFieldCount: 5,
+  });
   await expectNoHorizontalOverflow(page);
 });
 

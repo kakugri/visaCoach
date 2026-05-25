@@ -73,7 +73,9 @@ Then run one real browser session:
 curl https://visacoach.kakugri.dev/api/health
 ```
 
-You should see `checks.analytics.eventsByName.session_started` and `checks.ai.usageSinceStart` begin to move.
+You should see `checks.analytics.eventsByName.session_started`, `checks.analytics.eventsByName.question_set_prepared`, and `checks.ai.usageSinceStart` begin to move.
+
+For question personalization quality, inspect backend logs for sanitized `question_set_prepared` events. Useful fields are `questionSource`, `questionSourceReason`, `personalizedQuestions`, `questionCount`, `contextFieldCount`, and `concernCount`. These should not include applicant answers, notes, or documents.
 
 ## Logs
 
