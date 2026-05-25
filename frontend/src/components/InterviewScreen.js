@@ -2,6 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { aiInterviewService } from '../services/aiInterviewService.js';
 import { trackEvent } from '../services/analytics.js';
+import {
+  buildPracticeSummary,
+  CONTEXT_FIELD_LABELS,
+  getStructuredFeedbackRows,
+} from '../utils/interviewSummary.js';
 import './InterviewScreen.css';
 
 const SESSION_QUESTION_LIMIT = 5;
@@ -13,22 +18,6 @@ const DEFAULT_SESSION_CONTEXT = {
   fundingSource: '',
   returnPlan: '',
   notes: '',
-};
-
-const CONCERN_LABELS = {
-  answering: 'Answering questions effectively',
-  documentation: 'Required documentation',
-  english: 'English language skills',
-  nervousness: 'Managing nervousness',
-};
-
-const CONTEXT_FIELD_LABELS = {
-  homeCountry: 'Home country or current residence',
-  institutionOrHost: 'School, employer, host, or program',
-  programOrPurpose: 'Program, role, or trip purpose',
-  fundingSource: 'Funding source',
-  returnPlan: 'Return plan or home ties',
-  notes: 'Application notes',
 };
 
 function renderInlineMarkdown(text) {
@@ -74,27 +63,11 @@ function StructuredFeedback({ feedback, fallbackText, brief }) {
     return <FormattedFeedback text={brief ? `${fallbackText.split('.')[0]}.` : fallbackText} />;
   }
 
-  const riskFlags = Array.isArray(feedback.riskFlags)
-    ? feedback.riskFlags.filter(Boolean)
-    : [];
-
-  const rows = brief
-    ? [
-        ['Quick read', feedback.quickRead],
-        ['Main fix', feedback.mainFix],
-      ]
-    : [
-        ['Quick read', feedback.quickRead],
-        ['Main fix', feedback.mainFix],
-        ['Stronger answer', feedback.strongerAnswer],
-        ['Consistency check', feedback.consistencyCheck],
-        ...(riskFlags.length ? [['Risk flags', riskFlags.join('; ')]] : []),
-        ...(feedback.followUpQuestion ? [['Follow-up', feedback.followUpQuestion]] : []),
-      ];
+  const rows = getStructuredFeedbackRows(feedback, { brief });
 
   return (
     <div className="structured-feedback">
-      {rows.filter(([, value]) => value).map(([label, value]) => (
+      {rows.map(([label, value]) => (
         <div className="structured-feedback-row" key={label}>
           <span>{label}</span>
           <p>{value}</p>
@@ -550,10 +523,6 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
     return cleaned;
   }, {});
 
-  const getContextSummaryLines = () => Object.entries(getCleanSessionContext())
-    .filter(([, value]) => value)
-    .map(([key, value]) => `${CONTEXT_FIELD_LABELS[key]}: ${value}`);
-
   const saveInterviewHistory = async (history = conversationHistory, statsData = interviewStats) => {
     const interviewData = {
       sessionId,
@@ -584,55 +553,17 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
     }
   };
 
-  const formatFeedbackForSummary = (item) => {
-    if (!item.feedback) {
-      return item.agentResponse || 'No feedback captured.';
-    }
-
-    const lines = [
-      item.feedback.quickRead ? `Quick read: ${item.feedback.quickRead}` : '',
-      item.feedback.mainFix ? `Main fix: ${item.feedback.mainFix}` : '',
-      item.feedback.strongerAnswer ? `Stronger answer: ${item.feedback.strongerAnswer}` : '',
-      item.feedback.consistencyCheck ? `Consistency check: ${item.feedback.consistencyCheck}` : '',
-      Array.isArray(item.feedback.riskFlags) && item.feedback.riskFlags.length
-        ? `Risk flags: ${item.feedback.riskFlags.join('; ')}`
-        : '',
-      item.feedback.followUpQuestion ? `Follow-up: ${item.feedback.followUpQuestion}` : '',
-    ].filter(Boolean);
-
-    return lines.join('\n');
-  };
-
   const buildSessionSummary = () => {
-    const contextLines = getContextSummaryLines();
-    const concernLines = userNeeds.map(need => CONCERN_LABELS[need]).filter(Boolean);
-    const lines = [
-      'VisaCoach Practice Summary',
-      `Country: ${selectedCountry}`,
-      `Visa type: ${selectedVisaType}`,
-      `Confidence before: ${userConfidence}/10`,
-      `Confidence after: ${postSessionConfidence}/10`,
-      ...(concernLines.length ? [`Concerns: ${concernLines.join(', ')}`] : []),
-      ...(contextLines.length ? ['', 'Applicant context:', ...contextLines] : []),
-      `Practice readiness: ${interviewStats.overallScore}%`,
-      '',
-      'Strengths:',
-      ...interviewStats.strongAreas.map(area => `- ${area}`),
-      '',
-      'Focus areas:',
-      ...interviewStats.improvementAreas.map(area => `- ${area}`),
-      '',
-      'Practice answers:',
-      ...conversationHistory.flatMap((item, index) => [
-        `${index + 1}. ${item.question}`,
-        `Answer: ${item.userResponse}`,
-        `Feedback: ${formatFeedbackForSummary(item)}`,
-        '',
-      ]),
-      'Note: This is practice support only. It is not legal advice and does not predict or guarantee a visa decision.',
-    ];
-
-    return lines.join('\n');
+    return buildPracticeSummary({
+      selectedCountry,
+      selectedVisaType,
+      userConfidence,
+      postSessionConfidence,
+      userNeeds,
+      sessionContext: getCleanSessionContext(),
+      interviewStats,
+      conversationHistory,
+    });
   };
 
   const handleCopySummary = async () => {

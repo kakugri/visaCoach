@@ -68,7 +68,7 @@ Exit criteria:
 
 ## Milestone 3: Structured AI Feedback
 
-Status: core complete; backend tests added. Frontend summary/rendering tests remain.
+Status: core complete; backend tests and frontend summary/feedback formatting tests added.
 
 Goal: make AI output reliable enough for product use.
 
@@ -262,5 +262,5 @@ Milestones 1 and 2 are implemented in the core no-login flow. Milestone 3 is now
 
 Immediate next build priorities:
 
-- Add frontend tests for summary generation, structured feedback rendering, and account prompts.
+- Add broader frontend tests around account prompts and auth redirects.
 - Expand Playwright checks to cover live authenticated login and profile refresh behavior.
