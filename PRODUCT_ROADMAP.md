@@ -125,12 +125,13 @@ Exit criteria:
 - Logged-in users can see real saved history.
 - Logged-in users can delete saved sessions.
 - Logged-in users can export account/session data.
+- Logged-in users can delete their account and embedded saved history.
 - Logged-out users can still complete a session.
 - The profile area no longer contains mock/premium dashboard artifacts.
 
 ## Milestone 5: UI And Launch Polish
 
-Status: in progress. Legacy pages/claims removed, info pages added, local analytics added, backend rate limiting added, account navigation polished, mobile CSS pass started, and Playwright desktop/mobile checks now cover landing, prep, full session completion, summary copy, saved-session search/filter/delete, practice-again from history, account export, dropdown behavior, and local-session migration after registration.
+Status: in progress. Legacy pages/claims removed, info pages added, local analytics added, backend rate limiting added, account navigation polished, prep setup compacted, account deletion added, mobile CSS pass started, and Playwright desktop/mobile checks now cover landing, prep, full session completion, summary copy, saved-session search/filter/delete, practice-again from history, account export/delete, dropdown behavior, and local-session migration after registration.
 
 Goal: make the app feel credible enough to share publicly.
 
@@ -194,7 +195,7 @@ Remaining hardening:
 - Rotate any exposed Gemini keys after testing.
 - Decide whether to enable paid Gemini billing or add a secondary provider.
 - Add uptime and error monitoring beyond Docker logs.
-- Add server-side account deletion/export hardening if the app moves beyond public beta.
+- Add server-side export hardening if the app moves beyond public beta.
 
 ## Milestone 7: Question Personalization And Profile Onboarding
 
@@ -260,4 +261,4 @@ Immediate next build priorities:
 - Revisit the prep screen layout now that profile-first and no-login-first are both supported.
 - Add frontend tests for summary generation, structured feedback rendering, and account prompts.
 - Expand Playwright checks to cover live authenticated login and profile refresh behavior.
-- Decide whether account deletion needs a real backend endpoint before broader public launch.
+- Decide whether account export needs a real backend endpoint before broader public launch.

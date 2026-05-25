@@ -76,6 +76,7 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [statusMessage, setStatusMessage] = useState('');
   const [deletingSessionId, setDeletingSessionId] = useState('');
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [sessionSearch, setSessionSearch] = useState('');
   const [countryFilter, setCountryFilter] = useState('all');
   const [visaFilter, setVisaFilter] = useState('all');
@@ -246,6 +247,40 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
       console.error('Unable to copy account data:', error);
       localStorage.setItem('visaCoach:accountExport', JSON.stringify(exportData));
       setStatusMessage('Clipboard was unavailable, so the export was saved locally.');
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm('Delete your VisaCoach account and all saved sessions? This cannot be undone.');
+    if (!confirmed) return;
+
+    setIsDeletingAccount(true);
+    setStatusMessage('');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/account`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Delete failed');
+      }
+
+      localStorage.removeItem('visaCoach:lastSession');
+      localStorage.removeItem('visaCoach:practiceDraft');
+      localStorage.removeItem('visaCoach:accountExport');
+      handleLogout();
+      window.location.replace('/');
+    } catch (error) {
+      console.error('Unable to delete account:', error);
+      setStatusMessage('Account could not be deleted.');
+    } finally {
+      setIsDeletingAccount(false);
     }
   };
 
@@ -476,6 +511,9 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
         <div className="settings-buttons">
           <button className="btn btn-primary" onClick={handleExportData}>Copy Account Data</button>
           <button className="btn btn-outline" onClick={() => navigate('/history')}>View Saved Sessions</button>
+          <button className="btn btn-danger" onClick={handleDeleteAccount} disabled={isDeletingAccount}>
+            {isDeletingAccount ? 'Deleting...' : 'Delete Account'}
+          </button>
           <button className="btn btn-outline" onClick={handleLogout}>Sign Out</button>
         </div>
       </div>

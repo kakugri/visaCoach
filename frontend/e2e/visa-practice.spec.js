@@ -78,8 +78,18 @@ const mockStructuredFeedback = async (page) => {
 
 const mockSavedSessions = async (page) => {
   let deleted = false;
+  let accountDeleted = false;
 
   await page.route('**/api/auth/profile', async (route) => {
+    if (accountDeleted) {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'User not found' }),
+      });
+      return;
+    }
+
     await route.fulfill({
       contentType: 'application/json',
       body: JSON.stringify({
@@ -92,7 +102,7 @@ const mockSavedSessions = async (page) => {
   });
 
   await page.route('**/api/interview/history', async (route) => {
-    if (deleted) {
+    if (deleted || accountDeleted) {
       await route.fulfill({
         contentType: 'application/json',
         body: JSON.stringify([]),
@@ -144,6 +154,19 @@ const mockSavedSessions = async (page) => {
     await route.fulfill({
       contentType: 'application/json',
       body: JSON.stringify({ message: 'Saved session deleted', sessionId: 'session-1' }),
+    });
+  });
+
+  await page.route('**/api/auth/account', async (route) => {
+    if (route.request().method() !== 'DELETE') {
+      await route.fallback();
+      return;
+    }
+
+    accountDeleted = true;
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({ message: 'Account deleted' }),
     });
   });
 };
@@ -461,6 +484,48 @@ test('opens profile and settings from the account dropdown', async ({ page, cont
   await expect(page).toHaveURL(/\/profile$/);
   await expect(page.getByRole('heading', { name: 'Test User' })).toBeVisible();
   await expect(page.getByText('Member since')).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
+test('deletes the signed-in account from settings', async ({ page }) => {
+  await mockSavedSessions(page);
+  await page.addInitScript(() => {
+    if (window.location.pathname !== '/settings') return;
+    if (localStorage.getItem('account-delete-test-seeded')) return;
+    localStorage.setItem('account-delete-test-seeded', 'true');
+    localStorage.setItem('token', 'test-token');
+    localStorage.setItem('user', JSON.stringify({
+      name: 'Test User',
+      email: 'test@example.com',
+    }));
+    localStorage.setItem('visaCoach:lastSession', JSON.stringify({ sessionId: 'session-1' }));
+  });
+
+  await page.goto('/settings');
+  await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+
+  page.once('dialog', async (dialog) => {
+    expect(dialog.message()).toContain('Delete your VisaCoach account');
+    await dialog.accept();
+  });
+
+  await page.getByRole('button', { name: 'Delete Account' }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole('button', { name: 'Choose Visa Path' })).toBeVisible();
+
+  const storageState = await page.evaluate(() => ({
+    token: localStorage.getItem('token'),
+    user: localStorage.getItem('user'),
+    lastSession: localStorage.getItem('visaCoach:lastSession'),
+    seeded: localStorage.getItem('account-delete-test-seeded'),
+  }));
+
+  expect(storageState).toEqual({
+    token: null,
+    user: null,
+    lastSession: null,
+    seeded: 'true',
+  });
   await expectNoHorizontalOverflow(page);
 });
 

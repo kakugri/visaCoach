@@ -679,7 +679,7 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
   const hasAccountSession = Boolean(localStorage.getItem('token'));
 
   return (
-    <div className="interview-container">
+    <div className={`interview-container ${showPrep ? 'prep-mode' : ''}`}>
       <div className="interview-header">
         <h2>Visa Interview Simulation</h2>
         <div className="interview-info">
@@ -702,189 +702,204 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
 
       {showPrep ? (
         <div className="preparation-screen">
-          <h3>Prepare for Your Interview</h3>
-
-          <div className="prep-section context-section">
-            <h4>Your Context</h4>
+          <div className="prep-heading">
+            <div>
+              <p className="prep-kicker">Practice setup</p>
+              <h3>Prepare for Your Interview</h3>
+            </div>
             <div className="context-path-summary">
               <span>Destination: {selectedCountry}</span>
               <span>Visa type: {selectedVisaType}</span>
             </div>
-            <div className="context-grid">
-              <label className="context-field">
-                <span>{CONTEXT_FIELD_LABELS.homeCountry}</span>
-                <input
-                  type="text"
-                  value={sessionContext.homeCountry}
-                  onChange={(e) => handleContextChange('homeCountry', e.target.value)}
-                  placeholder="Ghana"
-                />
-              </label>
-              <label className="context-field">
-                <span>{CONTEXT_FIELD_LABELS.institutionOrHost}</span>
-                <input
-                  type="text"
-                  value={sessionContext.institutionOrHost}
-                  onChange={(e) => handleContextChange('institutionOrHost', e.target.value)}
-                  placeholder="University, employer, host, or event"
-                />
-              </label>
-              <label className="context-field">
-                <span>{CONTEXT_FIELD_LABELS.programOrPurpose}</span>
-                <input
-                  type="text"
-                  value={sessionContext.programOrPurpose}
-                  onChange={(e) => handleContextChange('programOrPurpose', e.target.value)}
-                  placeholder="MS Computer Science, tourism, business meeting"
-                />
-              </label>
-              <label className="context-field">
-                <span>{CONTEXT_FIELD_LABELS.fundingSource}</span>
-                <input
-                  type="text"
-                  value={sessionContext.fundingSource}
-                  onChange={(e) => handleContextChange('fundingSource', e.target.value)}
-                  placeholder="Family sponsor, savings, scholarship"
-                />
-              </label>
-              <label className="context-field context-field-wide">
-                <span>{CONTEXT_FIELD_LABELS.returnPlan}</span>
-                <input
-                  type="text"
-                  value={sessionContext.returnPlan}
-                  onChange={(e) => handleContextChange('returnPlan', e.target.value)}
-                  placeholder="Job, family, business, property, or career plan at home"
-                />
-              </label>
-              <label className="context-field context-field-wide">
-                <span>{CONTEXT_FIELD_LABELS.notes}</span>
-                <textarea
-                  value={sessionContext.notes}
-                  onChange={(e) => handleContextChange('notes', e.target.value)}
-                  placeholder="Paste short SOP, resume, DS-160, or application notes"
-                  rows="3"
-                />
-              </label>
-            </div>
-          </div>
-          
-          <div className="prep-section">
-            <h4>How confident are you about this interview?</h4>
-            <div className="confidence-slider">
-              <div className="slider-track">
-                <input 
-                  type="range" 
-                  min="1" 
-                  max="10" 
-                  value={userConfidence}
-                  onChange={(e) => setUserConfidence(parseInt(e.target.value))}
-                  aria-label="Interview confidence before practice"
-                />
-                <div className="slider-progress" style={{width: `${(userConfidence-1) * 10}%`}}></div>
-              </div>
-              <div className="slider-labels">
-                <span>Not confident</span>
-                <span>Very confident</span>
-              </div>
-              <div className="confidence-value">Your confidence: {userConfidence}/10</div>
-            </div>
-          </div>
-          
-          <div className="prep-section">
-            <h4>What are you most concerned about? (Select all that apply)</h4>
-            <div className="concerns-checkboxes">
-              <label className="custom-checkbox">
-                <input 
-                  type="checkbox" 
-                  checked={userNeeds.includes('answering')}
-                  onChange={() => handleNeedsChange('answering')}
-                />
-                <span className="checkmark"></span>
-                Answering questions effectively
-              </label>
-              <label className="custom-checkbox">
-                <input 
-                  type="checkbox" 
-                  checked={userNeeds.includes('documentation')}
-                  onChange={() => handleNeedsChange('documentation')}
-                />
-                <span className="checkmark"></span>
-                Required documentation
-              </label>
-              <label className="custom-checkbox">
-                <input 
-                  type="checkbox" 
-                  checked={userNeeds.includes('english')}
-                  onChange={() => handleNeedsChange('english')}
-                />
-                <span className="checkmark"></span>
-                English language skills
-              </label>
-              <label className="custom-checkbox">
-                <input 
-                  type="checkbox" 
-                  checked={userNeeds.includes('nervousness')}
-                  onChange={() => handleNeedsChange('nervousness')}
-                />
-                <span className="checkmark"></span>
-                Managing nervousness
-              </label>
-            </div>
-          </div>
-          
-          <div className="prep-section">
-            <h4>Question set</h4>
-            <label className="custom-checkbox">
-              <input
-                type="checkbox"
-                checked={usePersonalizedQuestions}
-                onChange={() => setUsePersonalizedQuestions(prev => !prev)}
-              />
-              <span className="checkmark"></span>
-              Personalize questions with my context
-            </label>
           </div>
 
-          <div className="prep-section">
-            <h4>How detailed would you like the feedback to be?</h4>
-            <div className="feedback-radios">
-              <label className="custom-radio">
-                <input 
-                  type="radio" 
-                  name="feedback" 
-                  value="brief"
-                  checked={feedbackLevel === 'brief'}
-                  onChange={() => setFeedbackLevel('brief')}
-                />
-                <span className="radio-mark"></span>
-                Brief (Just tell me if I'm on the right track)
-              </label>
-              <label className="custom-radio">
-                <input 
-                  type="radio" 
-                  name="feedback" 
-                  value="detailed"
-                  checked={feedbackLevel === 'detailed'}
-                  onChange={() => setFeedbackLevel('detailed')}
-                />
-                <span className="radio-mark"></span>
-                Detailed (Provide specific suggestions)
-              </label>
-              <label className="custom-radio">
-                <input 
-                  type="radio" 
-                  name="feedback" 
-                  value="realistic"
-                  checked={feedbackLevel === 'realistic'}
-                  onChange={() => setFeedbackLevel('realistic')}
-                />
-                <span className="radio-mark"></span>
-                Realistic (Minimal feedback, like a real interview)
-              </label>
+          <div className="prep-layout">
+            <div className="prep-section context-section">
+              <h4>Applicant Context</h4>
+              <div className="context-grid">
+                <label className="context-field">
+                  <span>{CONTEXT_FIELD_LABELS.homeCountry}</span>
+                  <input
+                    type="text"
+                    value={sessionContext.homeCountry}
+                    onChange={(e) => handleContextChange('homeCountry', e.target.value)}
+                    placeholder="Ghana"
+                  />
+                </label>
+                <label className="context-field">
+                  <span>{CONTEXT_FIELD_LABELS.institutionOrHost}</span>
+                  <input
+                    type="text"
+                    value={sessionContext.institutionOrHost}
+                    onChange={(e) => handleContextChange('institutionOrHost', e.target.value)}
+                    placeholder="University, employer, host, or event"
+                  />
+                </label>
+                <label className="context-field">
+                  <span>{CONTEXT_FIELD_LABELS.programOrPurpose}</span>
+                  <input
+                    type="text"
+                    value={sessionContext.programOrPurpose}
+                    onChange={(e) => handleContextChange('programOrPurpose', e.target.value)}
+                    placeholder="MS Computer Science, tourism, business meeting"
+                  />
+                </label>
+                <label className="context-field">
+                  <span>{CONTEXT_FIELD_LABELS.fundingSource}</span>
+                  <input
+                    type="text"
+                    value={sessionContext.fundingSource}
+                    onChange={(e) => handleContextChange('fundingSource', e.target.value)}
+                    placeholder="Family sponsor, savings, scholarship"
+                  />
+                </label>
+                <label className="context-field context-field-wide">
+                  <span>{CONTEXT_FIELD_LABELS.returnPlan}</span>
+                  <input
+                    type="text"
+                    value={sessionContext.returnPlan}
+                    onChange={(e) => handleContextChange('returnPlan', e.target.value)}
+                    placeholder="Job, family, business, property, or career plan at home"
+                  />
+                </label>
+                <label className="context-field context-field-wide">
+                  <span>{CONTEXT_FIELD_LABELS.notes}</span>
+                  <textarea
+                    value={sessionContext.notes}
+                    onChange={(e) => handleContextChange('notes', e.target.value)}
+                    placeholder="Paste short SOP, resume, DS-160, or application notes"
+                    rows="3"
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className="prep-controls-panel">
+              <div className="prep-section">
+                <h4>Confidence</h4>
+                <div className="confidence-slider">
+                  <div className="slider-track">
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={userConfidence}
+                      onChange={(e) => setUserConfidence(parseInt(e.target.value))}
+                      aria-label="Interview confidence before practice"
+                    />
+                    <div className="slider-progress" style={{width: `${(userConfidence-1) * 10}%`}}></div>
+                  </div>
+                  <div className="slider-labels">
+                    <span>Not confident</span>
+                    <span>Very confident</span>
+                  </div>
+                  <div className="confidence-value">Your confidence: {userConfidence}/10</div>
+                </div>
+              </div>
+
+              <div className="prep-section">
+                <h4>Focus Areas</h4>
+                <div className="concerns-checkboxes concerns-grid">
+                  <label className="custom-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={userNeeds.includes('answering')}
+                      onChange={() => handleNeedsChange('answering')}
+                    />
+                    <span className="checkmark"></span>
+                    Answering
+                  </label>
+                  <label className="custom-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={userNeeds.includes('documentation')}
+                      onChange={() => handleNeedsChange('documentation')}
+                    />
+                    <span className="checkmark"></span>
+                    Documents
+                  </label>
+                  <label className="custom-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={userNeeds.includes('english')}
+                      onChange={() => handleNeedsChange('english')}
+                    />
+                    <span className="checkmark"></span>
+                    English clarity
+                  </label>
+                  <label className="custom-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={userNeeds.includes('nervousness')}
+                      onChange={() => handleNeedsChange('nervousness')}
+                    />
+                    <span className="checkmark"></span>
+                    Nervousness
+                  </label>
+                </div>
+              </div>
+
+              <div className="prep-section">
+                <h4>Feedback Style</h4>
+                <div className="feedback-radios feedback-options">
+                  <label className="custom-radio">
+                    <input
+                      type="radio"
+                      name="feedback"
+                      value="brief"
+                      checked={feedbackLevel === 'brief'}
+                      onChange={() => setFeedbackLevel('brief')}
+                      aria-label="Brief (Just tell me if I'm on the right track)"
+                    />
+                    <span className="radio-mark"></span>
+                    Brief
+                  </label>
+                  <label className="custom-radio">
+                    <input
+                      type="radio"
+                      name="feedback"
+                      value="detailed"
+                      checked={feedbackLevel === 'detailed'}
+                      onChange={() => setFeedbackLevel('detailed')}
+                      aria-label="Detailed (Provide specific suggestions)"
+                    />
+                    <span className="radio-mark"></span>
+                    Detailed
+                  </label>
+                  <label className="custom-radio">
+                    <input
+                      type="radio"
+                      name="feedback"
+                      value="realistic"
+                      checked={feedbackLevel === 'realistic'}
+                      onChange={() => setFeedbackLevel('realistic')}
+                      aria-label="Realistic (Minimal feedback, like a real interview)"
+                    />
+                    <span className="radio-mark"></span>
+                    Realistic
+                  </label>
+                </div>
+              </div>
+
+              <div className="prep-start-panel">
+                <label className="custom-checkbox question-mode-toggle">
+                  <input
+                    type="checkbox"
+                    checked={usePersonalizedQuestions}
+                    onChange={() => setUsePersonalizedQuestions(prev => !prev)}
+                  />
+                  <span className="checkmark"></span>
+                  Personalize questions
+                </label>
+
+                <button className="start-interview-button" onClick={startInterview} disabled={isPreparingQuestions}>
+                  {isPreparingQuestions ? 'Preparing questions...' : 'Start Interview Simulation'}
+                </button>
+              </div>
             </div>
           </div>
           
-          <div className="prep-tips-container">
+          <div className="prep-reference-grid">
             <div className="prep-section prep-tips">
               <h4>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -932,10 +947,6 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
               </ul>
             </div>
           </div>
-          
-          <button className="start-interview-button" onClick={startInterview} disabled={isPreparingQuestions}>
-            {isPreparingQuestions ? 'Preparing questions...' : 'Start Interview Simulation'}
-          </button>
         </div>
       ) : (
         <div className="interview-content">

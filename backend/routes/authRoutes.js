@@ -157,6 +157,29 @@ const authMiddleware = async (req, res, next) => {
   }
 };
 
+const deleteAuthenticatedAccount = async (userId) => {
+  if (!userId) {
+    return {
+      status: 400,
+      body: { error: 'User ID is missing from token' },
+    };
+  }
+
+  const deletedUser = await User.findByIdAndDelete(userId);
+
+  if (!deletedUser) {
+    return {
+      status: 404,
+      body: { error: 'User not found' },
+    };
+  }
+
+  return {
+    status: 200,
+    body: { message: 'Account deleted' },
+  };
+};
+
 // GET user profile - with proper authentication
 router.get('/profile', authMiddleware, async (req, res) => {
   try {
@@ -178,5 +201,19 @@ router.get('/profile', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch profile' });
   }
 });
+
+router.delete('/account', authMiddleware, async (req, res) => {
+  try {
+    const result = await deleteAuthenticatedAccount(req.user.userId);
+    res.status(result.status).json(result.body);
+  } catch (error) {
+    console.error('Error deleting user account:', error);
+    res.status(500).json({ error: 'Failed to delete account' });
+  }
+});
+
+router._test = {
+  deleteAuthenticatedAccount,
+};
 
 module.exports = router;
