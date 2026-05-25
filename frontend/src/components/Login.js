@@ -111,11 +111,7 @@ const Login = () => {
                     </div>
                     
                     <div className="form-options">
-                        <div className="remember-me">
-                            <input type="checkbox" id="remember" />
-                            <label htmlFor="remember">Remember me</label>
-                        </div>
-                        <Link to="/" className="forgot-password">Practice without an account</Link>
+                        <Link to="/" className="practice-link">Practice without an account</Link>
                     </div>
                     
                     <button type="submit" className="btn btn-primary btn-block">Sign In</button>

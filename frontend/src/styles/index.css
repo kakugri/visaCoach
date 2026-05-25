@@ -213,8 +213,7 @@ svg {
 }
 
 .form-group label,
-.terms-agreement label,
-.remember-me label {
+.terms-agreement label {
   color: #334155;
   font-size: 0.9rem;
   font-weight: 700;
@@ -236,18 +235,17 @@ svg {
 }
 
 .form-options,
-.terms-agreement,
-.remember-me {
+.terms-agreement {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
 .form-options {
-  justify-content: space-between;
+  justify-content: flex-end;
 }
 
-.forgot-password,
+.practice-link,
 .auth-footer a,
 .terms-agreement a {
   color: #2563eb;
