@@ -20,6 +20,22 @@ const DEFAULT_SESSION_CONTEXT = {
   notes: '',
 };
 
+const DEFAULT_GENERAL_TIPS = [
+  'Answer truthfully and keep each response focused.',
+  'Use concrete facts that match your forms and documents.',
+  'Pause briefly before answering if you need to organize your thoughts.',
+];
+
+const DEFAULT_SPECIFIC_TIPS = [
+  'Know why this destination and visa path fit your plan.',
+  'Be ready to explain funding, purpose, and plans after the visa period.',
+];
+
+const DEFAULT_COMMON_MISTAKES = [
+  'Giving very short or vague answers.',
+  'Saying something that conflicts with your application materials.',
+];
+
 function renderInlineMarkdown(text) {
   return text.split(/(\*\*[^*]+\*\*)/g).map((part, index) => {
     if (part.startsWith('**') && part.endsWith('**')) {
@@ -76,6 +92,22 @@ function StructuredFeedback({ feedback, fallbackText, brief }) {
     </div>
   );
 }
+
+const getQuestionSetNotice = (questionSetMeta) => {
+  if (questionSetMeta.source === 'gemini' || questionSetMeta.sourceReason === 'static') {
+    return '';
+  }
+
+  if (questionSetMeta.sourceReason === 'quota' || questionSetMeta.sourceReason === 'quota_cooldown') {
+    return 'Personalized questions are cooling down because Gemini quota was reached. Using the built-in question bank.';
+  }
+
+  if (questionSetMeta.sourceReason === 'network') {
+    return 'Personalized questions are unavailable right now. Using the built-in question bank.';
+  }
+
+  return 'Personalized questions could not be prepared. Using the built-in question bank.';
+};
 
 function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = null, onGoBack }) {
   // State variables
@@ -418,7 +450,29 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
       }, AUTO_ADVANCE_DELAY_MS);
     } catch (error) {
       console.error("Error getting agent response:", error);
-      setAgentResponse("I could not process that answer with the remote service, so keep going and use the final summary to review your response.");
+      const fallbackResponse = 'I could not process that answer with the remote service, so keep going and use the final summary to review your response.';
+      const failedHistory = [...newHistory];
+
+      failedHistory[failedHistory.length - 1] = {
+        ...failedHistory[failedHistory.length - 1],
+        agentResponse: fallbackResponse,
+        feedbackSource: 'local',
+        feedbackSourceReason: 'network',
+        feedbackStyle: feedbackLevel,
+        feedback: null,
+      };
+
+      setConversationHistory(failedHistory);
+      setAgentResponse(fallbackResponse);
+      const nextStats = updateInterviewStats(failedHistory);
+
+      if (autoAdvanceTimerRef.current) {
+        clearTimeout(autoAdvanceTimerRef.current);
+      }
+
+      autoAdvanceTimerRef.current = setTimeout(() => {
+        handleNextQuestion(failedHistory, nextStats);
+      }, AUTO_ADVANCE_DELAY_MS);
     } finally {
       setIsLoading(false);
       setUserResponse(''); // Clear input field
@@ -467,26 +521,35 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
       model: 'local-question-bank',
     };
 
-    if (usePersonalizedQuestions) {
-      const generatedQuestionSet = await aiInterviewService.generateQuestions(
-        selectedCountry,
-        selectedVisaType,
-        {
-          confidence: userConfidence,
-          concerns: userNeeds,
-          context: cleanContext,
+    try {
+      if (usePersonalizedQuestions) {
+        const generatedQuestionSet = await aiInterviewService.generateQuestions(
+          selectedCountry,
+          selectedVisaType,
+          {
+            confidence: userConfidence,
+            concerns: userNeeds,
+            context: cleanContext,
+          }
+        );
+
+        if (generatedQuestionSet.questions.length) {
+          setInterviewQuestions(generatedQuestionSet.questions.slice(0, SESSION_QUESTION_LIMIT));
         }
-      );
 
-      if (generatedQuestionSet.questions.length) {
-        setInterviewQuestions(generatedQuestionSet.questions.slice(0, SESSION_QUESTION_LIMIT));
+        nextQuestionSetMeta = {
+          source: generatedQuestionSet.source,
+          sourceReason: generatedQuestionSet.sourceReason,
+          retryAfterSeconds: generatedQuestionSet.retryAfterSeconds,
+          model: generatedQuestionSet.model,
+        };
       }
-
+    } catch (error) {
+      console.error('Unable to prepare personalized questions:', error);
       nextQuestionSetMeta = {
-        source: generatedQuestionSet.source,
-        sourceReason: generatedQuestionSet.sourceReason,
-        retryAfterSeconds: generatedQuestionSet.retryAfterSeconds,
-        model: generatedQuestionSet.model,
+        source: 'local',
+        sourceReason: 'network',
+        model: 'local-question-bank',
       };
     }
 
@@ -608,6 +671,16 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
     latestConversationItem.agentResponse
   );
   const hasAccountSession = Boolean(localStorage.getItem('token'));
+  const generalTips = Array.isArray(preparationTips.general) && preparationTips.general.length
+    ? preparationTips.general
+    : DEFAULT_GENERAL_TIPS;
+  const specificTips = Array.isArray(preparationTips.specific) && preparationTips.specific.length
+    ? preparationTips.specific
+    : DEFAULT_SPECIFIC_TIPS;
+  const mistakesToAvoid = Array.isArray(commonMistakes) && commonMistakes.length
+    ? commonMistakes
+    : DEFAULT_COMMON_MISTAKES;
+  const questionSetNotice = getQuestionSetNotice(questionSetMeta);
 
   return (
     <div className={`interview-container ${showPrep ? 'prep-mode' : ''}`}>
@@ -841,7 +914,7 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
                 General Interview Tips
               </h4>
               <ul className="tips-list">
-                {preparationTips.general.map((tip, index) => (
+                {generalTips.map((tip, index) => (
                   <li key={`general-${index}`}>{tip}</li>
                 ))}
               </ul>
@@ -856,7 +929,7 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
                 Specific Tips for {selectedCountry} {selectedVisaType} Visa
               </h4>
               <ul className="tips-list">
-                {preparationTips.specific.map((tip, index) => (
+                {specificTips.map((tip, index) => (
                   <li key={`specific-${index}`}>{tip}</li>
                 ))}
               </ul>
@@ -872,7 +945,7 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
                 Common Mistakes to Avoid
               </h4>
               <ul className="tips-list">
-                {commonMistakes.map((mistake, index) => (
+                {mistakesToAvoid.map((mistake, index) => (
                   <li key={`mistake-${index}`}>{mistake}</li>
                 ))}
               </ul>
@@ -881,6 +954,12 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
         </div>
       ) : (
         <div className="interview-content">
+          {questionSetNotice && (
+            <div className="session-notice" role="status">
+              {questionSetNotice}
+            </div>
+          )}
+
           {/* Conversation history */}
           <div className="conversation-history">
             {conversationHistory.map((item, index) => (

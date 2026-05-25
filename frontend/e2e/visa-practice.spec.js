@@ -447,6 +447,52 @@ const mockEmailLogin = async (page) => {
   return profileRequests;
 };
 
+const mockAccountLoadRetry = async (page) => {
+  let shouldFail = true;
+
+  await page.route('**/api/auth/profile', async (route) => {
+    if (shouldFail) {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Profile unavailable' }),
+      });
+      return;
+    }
+
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        name: 'Recovered User',
+        email: 'recovered@example.com',
+        createdAt: '2026-05-25T14:00:00.000Z',
+      }),
+    });
+  });
+
+  await page.route('**/api/interview/history', async (route) => {
+    if (shouldFail) {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'History unavailable' }),
+      });
+      return;
+    }
+
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([]),
+    });
+  });
+
+  return {
+    recover: () => {
+      shouldFail = false;
+    },
+  };
+};
+
 const chooseF1Path = async (page) => {
   await page.getByText('United States', { exact: true }).click();
   await expect(page.locator('.visa-type-container.expanded')).toBeVisible();
@@ -499,6 +545,26 @@ test('starts a practice session from the prep screen', async ({ page }) => {
   await expect(page.getByText('Welcome to your practice session')).toBeVisible();
   await expect(page.getByText('Question 1 of 5')).toBeVisible();
   await expect(page.getByText('Questions: Gemini · test-question-model')).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
+test('uses the question bank with a visible notice when personalized questions fail', async ({ page }) => {
+  await page.route('**/api/interview/questions', async (route) => {
+    await route.fulfill({
+      status: 500,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'Question generation failed' }),
+    });
+  });
+
+  await page.goto('/');
+  await chooseF1Path(page);
+  await fillPrepContext(page);
+  await page.getByRole('button', { name: 'Start Interview Simulation' }).click();
+
+  await expect(page.getByRole('status')).toContainText('Personalized questions are unavailable right now');
+  await expect(page.getByText('Questions: Question bank')).toBeVisible();
+  await expect(page.getByText('Question 1 of 5')).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 
@@ -603,6 +669,27 @@ test('starts a new practice from a saved session with saved context', async ({ p
   await expect(page.getByLabel('Program, role, or trip purpose')).toHaveValue('MS Computer Science');
   await expect(page.getByLabel('Interview confidence before practice')).toHaveValue('7');
   await expect(page.getByLabel('Detailed (Provide specific suggestions)')).toBeChecked();
+  await expectNoHorizontalOverflow(page);
+});
+
+test('recovers the account page after account data fails to load', async ({ page }) => {
+  const accountLoad = await mockAccountLoadRetry(page);
+  await page.addInitScript(() => {
+    localStorage.setItem('token', 'retry-token');
+    localStorage.setItem('user', JSON.stringify({
+      name: 'Recovered User',
+      email: 'recovered@example.com',
+    }));
+  });
+
+  await page.goto('/history');
+  await expect(page.getByRole('heading', { name: 'Account data unavailable' })).toBeVisible();
+  await expect(page.getByText('We could not load your account data')).toBeVisible();
+
+  accountLoad.recover();
+  await page.getByRole('button', { name: 'Try Again' }).click();
+  await expect(page.getByRole('heading', { name: 'Saved Sessions', exact: true })).toBeVisible();
+  await expect(page.getByText('No saved sessions yet')).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 

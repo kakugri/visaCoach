@@ -627,6 +627,35 @@
   color: var(--text-light);
 }
 
+.account-error-state {
+  display: grid;
+  justify-items: start;
+  gap: 0.75rem;
+  max-width: 560px;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-md);
+  background-color: #fff;
+  box-shadow: var(--shadow-sm);
+  padding: 1.5rem;
+}
+
+.account-error-state h3 {
+  margin: 0;
+  color: var(--text-dark);
+}
+
+.account-error-state p {
+  margin: 0;
+  color: var(--text-medium);
+  line-height: 1.6;
+}
+
+.account-error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
 .settings-section {
   background-color: var(--bg-white);
   border-radius: var(--radius-md);

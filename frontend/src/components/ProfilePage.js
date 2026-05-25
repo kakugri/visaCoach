@@ -206,6 +206,8 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
   const [userData, setUserData] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [accountLoadError, setAccountLoadError] = useState('');
+  const [accountReloadKey, setAccountReloadKey] = useState(0);
   const [activeTab, setActiveTab] = useState(initialTab);
   const [statusMessage, setStatusMessage] = useState('');
   const [deletingSessionId, setDeletingSessionId] = useState('');
@@ -235,6 +237,7 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
     const fetchAccount = async () => {
       setIsLoading(true);
       setStatusMessage('');
+      setAccountLoadError('');
 
       try {
         const headers = {
@@ -247,19 +250,33 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
           fetch(`${API_BASE_URL}/api/interview/history`, { headers }),
         ]);
 
+        let profileLoaded = false;
+        let historyLoaded = false;
+        const authExpired = [profileResponse.status, historyResponse.status].some((status) => status === 401 || status === 403);
+
         if (profileResponse.ok) {
           setUserData(await profileResponse.json());
+          profileLoaded = true;
         }
 
         if (historyResponse.ok) {
           const history = await historyResponse.json();
           setSessions(Array.isArray(history) ? history.reverse() : []);
-        } else {
+          historyLoaded = true;
+        }
+
+        if (!profileLoaded && !historyLoaded) {
+          setAccountLoadError(authExpired
+            ? 'Your sign-in could not be verified. Sign out, then sign in again.'
+            : 'We could not load your account data. Check your connection and try again.');
+        } else if (!profileLoaded) {
+          setStatusMessage('Profile details could not be loaded. Showing saved browser info.');
+        } else if (!historyLoaded) {
           setStatusMessage('Saved sessions could not be loaded.');
         }
       } catch (error) {
         console.error('Error loading account:', error);
-        setStatusMessage('Saved sessions could not be loaded.');
+        setAccountLoadError('We could not load your account data. Check your connection and try again.');
       } finally {
         setIsLoading(false);
       }
@@ -268,7 +285,7 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
     if (token) {
       fetchAccount();
     }
-  }, [token]);
+  }, [accountReloadKey, token]);
 
   const stats = useMemo(() => {
     const scoredSessions = sessions.filter((session) => getSessionScore(session));
@@ -321,6 +338,10 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
     localStorage.setItem('visaCoach:firstRunProfilePromptDismissed', 'true');
     setIsFirstRunPromptDismissed(true);
     clearSetupSearchParam();
+  };
+
+  const handleRetryAccountLoad = () => {
+    setAccountReloadKey((currentKey) => currentKey + 1);
   };
 
   const handleFocusPracticeProfile = () => {
@@ -979,6 +1000,19 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
         <div className="loading-spinner">
           <div className="spinner-icon"></div>
           <span>Loading account...</span>
+        </div>
+      );
+    }
+
+    if (accountLoadError) {
+      return (
+        <div className="account-error-state">
+          <h3>Account data unavailable</h3>
+          <p>{accountLoadError}</p>
+          <div className="account-error-actions">
+            <button className="btn btn-primary" onClick={handleRetryAccountLoad}>Try Again</button>
+            <button className="btn btn-outline" onClick={handleLogout}>Sign Out</button>
+          </div>
         </div>
       );
     }
