@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { UserContext } from '../App';
 import GoogleAuth from './GoogleAuth';
 import logoSymbol from '../assets/images/logo-symbol.svg';
@@ -12,14 +12,20 @@ const Login = () => {
     const [isAuthenticating, setIsAuthenticating] = useState(false);
     const { handleLoginSuccess, isLoggedIn } = useContext(UserContext);
     const navigate = useNavigate();
+    const location = useLocation();
     const hasGoogleAuth = Boolean(process.env.REACT_APP_GOOGLE_CLIENT_ID);
+    const allowedRedirects = ['/history', '/profile', '/settings', '/selection'];
+    const requestedRedirect = typeof location.state?.from === 'string' ? location.state.from : '';
+    const redirectPath = allowedRedirects.some((path) => requestedRedirect === path || requestedRedirect.startsWith(`${path}?`))
+        ? requestedRedirect
+        : '/interview';
 
     const finishAuth = async (user, token) => {
         setIsAuthenticating(true);
 
         try {
             const migration = await handleLoginSuccess(user, token);
-            navigate(migration?.status === 'migrated' ? '/history' : '/interview', { replace: true });
+            navigate(migration?.status === 'migrated' ? '/history' : redirectPath, { replace: true });
         } catch (error) {
             setIsAuthenticating(false);
             throw error;
@@ -27,7 +33,7 @@ const Login = () => {
     };
 
     if (isLoggedIn && !isAuthenticating) {
-        return <Navigate to="/interview" replace />;
+        return <Navigate to={redirectPath} replace />;
     }
 
     const handleSubmit = async (e) => {

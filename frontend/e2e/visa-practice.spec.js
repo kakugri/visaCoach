@@ -646,7 +646,7 @@ test('shows saved session history and copies a saved summary', async ({ page, co
 
   await page.goto('/history');
 
-  await expect(page.getByRole('heading', { name: 'Saved Sessions' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Saved Sessions', exact: true })).toBeVisible();
   await expect(page.getByText('US F1')).toBeVisible();
   await expect(page.getByText('82%')).toBeVisible();
   await expect(page.getByText('Prepared a funding source before practice')).toBeVisible();
@@ -932,6 +932,22 @@ test('signs in with email and refreshes the profile with saved auth', async ({ p
   await expect(page.getByRole('heading', { name: 'Login User' })).toBeVisible();
   expect(profileRequests.every((header) => header === 'Bearer login-token')).toBe(true);
   expect(profileRequests.length).toBeGreaterThanOrEqual(2);
+  await expectNoHorizontalOverflow(page);
+});
+
+test('returns to a protected page after login', async ({ page }) => {
+  await mockEmailLogin(page);
+
+  await page.goto('/history');
+  await expect(page).toHaveURL(/\/login$/);
+
+  await page.getByLabel('Email').fill('login@example.com');
+  await page.getByLabel('Password').fill('correct-password');
+  await page.getByRole('button', { name: 'Sign In' }).click();
+
+  await expect(page).toHaveURL(/\/history$/);
+  await expect(page.getByRole('heading', { name: 'Saved Sessions', exact: true })).toBeVisible();
+  await expect(page.getByText('No saved sessions yet')).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 

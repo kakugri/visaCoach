@@ -267,9 +267,66 @@ Exit criteria:
 
 Milestones 1 and 2 are implemented in the core no-login flow. Milestone 3 is now core-complete on the backend with structured feedback, visa-specific prompt profiles, validation, local fallback, and tests. Milestone 4 is complete for the current product scope. Milestone 6 is live. Milestone 5 polish and Milestone 7 personalization/profile onboarding are the active workstreams.
 
+## Active Sub-Roadmaps
+
+### M5.x: Launch Polish
+
+Purpose: make the public beta feel intentional and trustworthy.
+
+- M5.1 Public trust surface: complete.
+  - About, Privacy, Terms, Contact, feedback template, legal/outcome boundaries.
+  - Public MVP/premium wording removed.
+- M5.2 Brand and metadata polish: complete.
+  - Favicon/logo direction set.
+  - Inter font loading cleaned up.
+  - Open Graph/Twitter metadata and social card added.
+- M5.3 Navigation and auth polish: complete for current scope.
+  - SPA footer links and public nav copy cleaned up.
+  - Nonfunctional login controls removed.
+  - Protected-route login return path added.
+- M5.4 Regression coverage: ongoing.
+  - Keep desktop/mobile Playwright coverage around public pages, auth redirects, profile, saved sessions, and practice flow.
+
+### M6.x: Production Hardening
+
+Purpose: make the deployed beta observable and low-drama to operate.
+
+- M6.1 Oracle Traefik deployment bundle: complete.
+- M6.2 Non-AI production smoke test: complete.
+- M6.3 Runtime health and analytics counters: complete.
+- M6.4 Uptime Kuma monitor setup: external next step.
+  - Use `deploy/oracle-traefik/MONITORING.md`.
+- M6.5 AI quota/provider decision: pending.
+  - Decide paid Gemini billing vs secondary provider fallback.
+- M6.6 Key rotation: deferred until the end of the current build/deploy cycle.
+
+### M7.x: Profile And Personalization
+
+Purpose: make saved profiles useful without slowing down no-login practice.
+
+- M7.1 Gemini question generation with static fallback: complete.
+- M7.2 Practice profile defaults: complete.
+- M7.3 First-run and protected-route onboarding: complete for current scope.
+  - First-run profile prompt exists.
+  - Registration can route users into setup.
+  - Login returns users to the protected page they attempted to open.
+- M7.4 Profile usefulness polish: next.
+  - Show clearer saved-profile completeness state.
+  - Make it obvious when a saved profile will prefill a practice session.
+- M7.5 Personalization quality loop: later.
+  - Use beta analytics and feedback to learn whether personalized questions are actually better than the question bank.
+
+### M8.x: Expansion Beyond Visa Interviews
+
+Purpose: avoid premature sprawl while preparing the architecture for later interview modes.
+
+- M8.1 Mode architecture sketch: deferred.
+- M8.2 Job interview pilot: deferred until visa beta usage validates the core loop.
+- M8.3 School/founder/pitch modes: deferred.
+
 Immediate next build priorities:
 
-- Finish the launch-polish pass by tightening brand assets, metadata, and stale prototype wording.
+- Start M7.4 profile usefulness polish.
 - Watch first real usage for Gemini quota pressure and account/session error rates.
 - Configure Uptime Kuma checks from `deploy/oracle-traefik/MONITORING.md`.
 - Rotate exposed Gemini keys at the end of the current build/deploy cycle.

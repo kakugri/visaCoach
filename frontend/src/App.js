@@ -1,5 +1,5 @@
 import React, { useState, createContext, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import InterviewPage from './pages/InterviewPage';
 import Login from './components/Login';
 import Register from './components/Register';
@@ -57,12 +57,13 @@ function App() {
     setSelectedVisaType(visaType);
   };
 
-  // Protected route component
   const ProtectedRoute = () => {
-    return isLoggedIn ? <Outlet /> : <Navigate to="/login" />;
+    const location = useLocation();
+    const from = `${location.pathname}${location.search || ''}`;
+
+    return isLoggedIn ? <Outlet /> : <Navigate to="/login" replace state={{ from }} />;
   };
 
-  // Authentication context value
   const authContextValue = {
     user,
     token,
