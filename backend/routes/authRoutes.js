@@ -180,6 +180,56 @@ const deleteAuthenticatedAccount = async (userId) => {
   };
 };
 
+const buildAccountExport = (user, exportedAt = new Date().toISOString()) => {
+  const account = typeof user.toObject === 'function' ? user.toObject() : user;
+  const sessions = Array.isArray(account.interviewHistory) ? account.interviewHistory : [];
+
+  const profile = {
+    id: account._id ? String(account._id) : account.id,
+    email: account.email,
+    name: account.name,
+    picture: account.picture,
+    countryOfOrigin: account.countryOfOrigin,
+    visaType: account.visaType,
+    interviewDate: account.interviewDate,
+    subscriptionStatus: account.subscriptionStatus,
+    lastLogin: account.lastLogin,
+    createdAt: account.createdAt,
+  };
+
+  return {
+    exportedAt,
+    profile: Object.fromEntries(
+      Object.entries(profile).filter(([, value]) => value !== undefined && value !== null)
+    ),
+    sessionCount: sessions.length,
+    sessions,
+  };
+};
+
+const exportAuthenticatedAccount = async (userId) => {
+  if (!userId) {
+    return {
+      status: 400,
+      body: { error: 'User ID is missing from token' },
+    };
+  }
+
+  const user = await User.findById(userId).select('-password');
+
+  if (!user) {
+    return {
+      status: 404,
+      body: { error: 'User not found' },
+    };
+  }
+
+  return {
+    status: 200,
+    body: buildAccountExport(user),
+  };
+};
+
 // GET user profile - with proper authentication
 router.get('/profile', authMiddleware, async (req, res) => {
   try {
@@ -202,6 +252,16 @@ router.get('/profile', authMiddleware, async (req, res) => {
   }
 });
 
+router.get('/export', authMiddleware, async (req, res) => {
+  try {
+    const result = await exportAuthenticatedAccount(req.user.userId);
+    res.status(result.status).json(result.body);
+  } catch (error) {
+    console.error('Error exporting user account:', error);
+    res.status(500).json({ error: 'Failed to export account data' });
+  }
+});
+
 router.delete('/account', authMiddleware, async (req, res) => {
   try {
     const result = await deleteAuthenticatedAccount(req.user.userId);
@@ -213,6 +273,8 @@ router.delete('/account', authMiddleware, async (req, res) => {
 });
 
 router._test = {
+  buildAccountExport,
+  exportAuthenticatedAccount,
   deleteAuthenticatedAccount,
 };
 

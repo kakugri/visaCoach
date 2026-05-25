@@ -79,6 +79,35 @@ const mockStructuredFeedback = async (page) => {
 const mockSavedSessions = async (page) => {
   let deleted = false;
   let accountDeleted = false;
+  const sessions = [
+    {
+      _id: 'session-1',
+      sessionId: 'session-1',
+      date: '2026-05-24T12:30:00.000Z',
+      country: 'US',
+      visaType: 'F1',
+      sessionContext: {
+        homeCountry: 'Ghana',
+        programOrPurpose: 'MS Computer Science',
+      },
+      confidence: {
+        before: 5,
+        after: 7,
+      },
+      stats: {
+        overallScore: 82,
+        strongAreas: ['Prepared a funding source before practice'],
+        improvementAreas: ['Add more specific details'],
+      },
+      questions: [
+        {
+          question: 'How will you finance your education?',
+          answer: 'My family sponsor and savings will fund my studies.',
+          feedback: 'Add sponsor details and document consistency.',
+        },
+      ],
+    },
+  ];
 
   await page.route('**/api/auth/profile', async (route) => {
     if (accountDeleted) {
@@ -112,35 +141,33 @@ const mockSavedSessions = async (page) => {
 
     await route.fulfill({
       contentType: 'application/json',
-      body: JSON.stringify([
-        {
-          _id: 'session-1',
-          sessionId: 'session-1',
-          date: '2026-05-24T12:30:00.000Z',
-          country: 'US',
-          visaType: 'F1',
-          sessionContext: {
-            homeCountry: 'Ghana',
-            programOrPurpose: 'MS Computer Science',
-          },
-          confidence: {
-            before: 5,
-            after: 7,
-          },
-          stats: {
-            overallScore: 82,
-            strongAreas: ['Prepared a funding source before practice'],
-            improvementAreas: ['Add more specific details'],
-          },
-          questions: [
-            {
-              question: 'How will you finance your education?',
-              answer: 'My family sponsor and savings will fund my studies.',
-              feedback: 'Add sponsor details and document consistency.',
-            },
-          ],
+      body: JSON.stringify(sessions),
+    });
+  });
+
+  await page.route('**/api/auth/export', async (route) => {
+    if (accountDeleted) {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'User not found' }),
+      });
+      return;
+    }
+
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        exportedAt: '2026-05-25T12:00:00.000Z',
+        profile: {
+          id: 'user-1',
+          name: 'Test User',
+          email: 'test@example.com',
+          createdAt: '2026-05-24T12:00:00.000Z',
         },
-      ]),
+        sessionCount: sessions.length,
+        sessions,
+      }),
     });
   });
 
@@ -473,6 +500,8 @@ test('opens profile and settings from the account dropdown', async ({ page, cont
   await expect(page.getByText('Account data copied.')).toBeVisible();
   const accountData = JSON.parse(await page.evaluate(() => navigator.clipboard.readText()));
   expect(accountData.profile.name).toBe('Test User');
+  expect(accountData.profile.password).toBeUndefined();
+  expect(accountData.sessionCount).toBe(1);
   expect(accountData.sessions[0].sessionId).toBe('session-1');
 
   await page.getByRole('button', { name: 'Saved Sessions', exact: true }).click();

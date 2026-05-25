@@ -117,7 +117,7 @@ Deliverables:
   - delete saved session
   - search, filter, and sort saved sessions
   - restart practice from a saved session with saved context prefilled
-- Add basic account data export from settings.
+- Add server-side account data export from settings.
 - Remove premium/upgrade language until there is a real monetization plan.
 
 Exit criteria:
@@ -131,7 +131,7 @@ Exit criteria:
 
 ## Milestone 5: UI And Launch Polish
 
-Status: in progress. Legacy pages/claims removed, info pages added, local analytics added, backend rate limiting added, account navigation polished, prep setup compacted, account deletion added, mobile CSS pass started, and Playwright desktop/mobile checks now cover landing, prep, full session completion, summary copy, saved-session search/filter/delete, practice-again from history, account export/delete, dropdown behavior, and local-session migration after registration.
+Status: in progress. Legacy pages/claims removed, info pages added, local analytics added, backend rate limiting added, account navigation polished, prep setup compacted, account export/delete hardened, mobile CSS pass started, and Playwright desktop/mobile checks now cover landing, prep, full session completion, summary copy, saved-session search/filter/delete, practice-again from history, account export/delete, dropdown behavior, and local-session migration after registration.
 
 Goal: make the app feel credible enough to share publicly.
 
@@ -190,12 +190,15 @@ Exit criteria:
 - MongoDB sessions save in production.
 - No secrets are committed.
 
+Completed hardening:
+
+- Server-side account export endpoint returns sanitized profile data and saved sessions.
+
 Remaining hardening:
 
 - Rotate any exposed Gemini keys after testing.
 - Decide whether to enable paid Gemini billing or add a secondary provider.
 - Add uptime and error monitoring beyond Docker logs.
-- Add server-side export hardening if the app moves beyond public beta.
 
 ## Milestone 7: Question Personalization And Profile Onboarding
 
@@ -258,7 +261,7 @@ Milestones 1 and 2 are implemented in the core no-login flow. Milestone 3 is now
 
 Immediate next build priorities:
 
-- Revisit the prep screen layout now that profile-first and no-login-first are both supported.
+- Add profile-first onboarding fields for applicants who want to create a profile before practice.
+- Reuse saved profile context as the default setup context for new practice sessions.
 - Add frontend tests for summary generation, structured feedback rendering, and account prompts.
 - Expand Playwright checks to cover live authenticated login and profile refresh behavior.
-- Decide whether account export needs a real backend endpoint before broader public launch.

@@ -77,6 +77,7 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
   const [statusMessage, setStatusMessage] = useState('');
   const [deletingSessionId, setDeletingSessionId] = useState('');
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [isExportingAccount, setIsExportingAccount] = useState(false);
   const [sessionSearch, setSessionSearch] = useState('');
   const [countryFilter, setCountryFilter] = useState('all');
   const [visaFilter, setVisaFilter] = useState('all');
@@ -234,19 +235,48 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
   };
 
   const handleExportData = async () => {
-    const exportData = {
+    const fallbackExportData = {
       exportedAt: new Date().toISOString(),
       profile: userData || user || null,
+      sessionCount: sessions.length,
       sessions,
     };
 
+    setIsExportingAccount(true);
+    setStatusMessage('');
+
     try {
+      let exportData = fallbackExportData;
+      let usedLocalFallback = false;
+
+      if (token) {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/auth/export`, {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (response.ok) {
+            exportData = await response.json();
+          } else {
+            usedLocalFallback = true;
+          }
+        } catch (error) {
+          console.error('Unable to fetch server account export:', error);
+          usedLocalFallback = true;
+        }
+      }
+
       await navigator.clipboard.writeText(JSON.stringify(exportData, null, 2));
-      setStatusMessage('Account data copied.');
+      setStatusMessage(usedLocalFallback ? 'Account data copied from local cache.' : 'Account data copied.');
     } catch (error) {
       console.error('Unable to copy account data:', error);
-      localStorage.setItem('visaCoach:accountExport', JSON.stringify(exportData));
-      setStatusMessage('Clipboard was unavailable, so the export was saved locally.');
+      localStorage.setItem('visaCoach:accountExport', JSON.stringify(fallbackExportData));
+      setStatusMessage('Export was saved locally because copy was unavailable.');
+    } finally {
+      setIsExportingAccount(false);
     }
   };
 
@@ -509,7 +539,9 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
         <h4>Data</h4>
         <p>Your saved sessions include practice answers, AI feedback, context you entered, and readiness summaries.</p>
         <div className="settings-buttons">
-          <button className="btn btn-primary" onClick={handleExportData}>Copy Account Data</button>
+          <button className="btn btn-primary" onClick={handleExportData} disabled={isExportingAccount}>
+            {isExportingAccount ? 'Copying...' : 'Copy Account Data'}
+          </button>
           <button className="btn btn-outline" onClick={() => navigate('/history')}>View Saved Sessions</button>
           <button className="btn btn-danger" onClick={handleDeleteAccount} disabled={isDeletingAccount}>
             {isDeletingAccount ? 'Deleting...' : 'Delete Account'}
