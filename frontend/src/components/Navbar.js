@@ -1,11 +1,10 @@
 import React, { useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { UserContext } from '../App';
 import logoSymbol from '../assets/images/logo-symbol.svg';
 
 const Navbar = () => {
   const { isLoggedIn, handleLogout, user } = useContext(UserContext);
-  const navigate = useNavigate();
 
   return (
     <header className="app-navbar">
@@ -32,7 +31,7 @@ const Navbar = () => {
                 </button>
                 <div className="dropdown-menu">
                   <Link to="/profile" className="dropdown-item">Profile</Link>
-                  <Link to="/history" className="dropdown-item">Interview History</Link>
+                  <Link to="/history" className="dropdown-item">Saved Sessions</Link>
                   <div className="dropdown-divider"></div>
                   <button onClick={handleLogout} className="dropdown-item logout-button">
                     Sign Out

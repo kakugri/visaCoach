@@ -1,10 +1,110 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { UserContext } from '../App';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { aiInterviewService } from '../services/aiInterviewService.js';
+import { trackEvent } from '../services/analytics.js';
 import './InterviewScreen.css';
 
-function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack, userPlan }) {
+const SESSION_QUESTION_LIMIT = 5;
+const AUTO_ADVANCE_DELAY_MS = 900;
+const DEFAULT_SESSION_CONTEXT = {
+  homeCountry: '',
+  institutionOrHost: '',
+  programOrPurpose: '',
+  fundingSource: '',
+  returnPlan: '',
+  notes: '',
+};
+
+const CONCERN_LABELS = {
+  answering: 'Answering questions effectively',
+  documentation: 'Required documentation',
+  english: 'English language skills',
+  nervousness: 'Managing nervousness',
+};
+
+const CONTEXT_FIELD_LABELS = {
+  homeCountry: 'Home country or current residence',
+  institutionOrHost: 'School, employer, host, or program',
+  programOrPurpose: 'Program, role, or trip purpose',
+  fundingSource: 'Funding source',
+  returnPlan: 'Return plan or home ties',
+  notes: 'Application notes',
+};
+
+function renderInlineMarkdown(text) {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={index}>{part.slice(2, -2)}</strong>;
+    }
+
+    return part;
+  });
+}
+
+function FormattedFeedback({ text }) {
+  const lines = text
+    .replace(/\r/g, '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  return (
+    <div className="formatted-feedback">
+      {lines.map((line, index) => {
+        const bullet = line.match(/^[-*]\s+(.*)/);
+        const numbered = line.match(/^\d+\.\s+(.*)/);
+        const content = bullet?.[1] || numbered?.[1] || line;
+
+        return (
+          <div
+            className={`feedback-line ${bullet || numbered ? 'feedback-list-line' : ''}`}
+            key={`${content}-${index}`}
+          >
+            {(bullet || numbered) && <span className="feedback-dot"></span>}
+            <span>{renderInlineMarkdown(content)}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function StructuredFeedback({ feedback, fallbackText, brief }) {
+  if (!feedback) {
+    return <FormattedFeedback text={brief ? `${fallbackText.split('.')[0]}.` : fallbackText} />;
+  }
+
+  const riskFlags = Array.isArray(feedback.riskFlags)
+    ? feedback.riskFlags.filter(Boolean)
+    : [];
+
+  const rows = brief
+    ? [
+        ['Quick read', feedback.quickRead],
+        ['Main fix', feedback.mainFix],
+      ]
+    : [
+        ['Quick read', feedback.quickRead],
+        ['Main fix', feedback.mainFix],
+        ['Stronger answer', feedback.strongerAnswer],
+        ['Consistency check', feedback.consistencyCheck],
+        ...(riskFlags.length ? [['Risk flags', riskFlags.join('; ')]] : []),
+        ...(feedback.followUpQuestion ? [['Follow-up', feedback.followUpQuestion]] : []),
+      ];
+
+  return (
+    <div className="structured-feedback">
+      {rows.filter(([, value]) => value).map(([label, value]) => (
+        <div className="structured-feedback-row" key={label}>
+          <span>{label}</span>
+          <p>{value}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack }) {
   // State variables
   const [interviewQuestions, setInterviewQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -19,7 +119,9 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack, userPlan
   const [commonMistakes, setCommonMistakes] = useState([]);
   const [showPrep, setShowPrep] = useState(true);
   const [userConfidence, setUserConfidence] = useState(5);
+  const [postSessionConfidence, setPostSessionConfidence] = useState(5);
   const [userNeeds, setUserNeeds] = useState([]);
+  const [sessionContext, setSessionContext] = useState(DEFAULT_SESSION_CONTEXT);
   const [feedbackLevel, setFeedbackLevel] = useState('detailed');
   const [interviewStats, setInterviewStats] = useState({
     strongAreas: [],
@@ -27,21 +129,21 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack, userPlan
     overallScore: 0
   });
   const [showAnimation, setShowAnimation] = useState(false);
-  
-  // Authentication related
-  const { token, isLoggedIn } = useContext(UserContext) || { token: null, isLoggedIn: false };
-  const navigate = useNavigate();
+  const [saveMessage, setSaveMessage] = useState('');
+  const [sessionId, setSessionId] = useState('');
   
   const conversationEndRef = useRef(null);
   const textAreaRef = useRef(null);
+  const autoAdvanceTimerRef = useRef(null);
+  const firstAnswerTrackedRef = useRef(false);
 
-  // Check authentication on component mount
   useEffect(() => {
-    const authToken = localStorage.getItem('token');
-    if (!authToken && !token) {
-      navigate('/login');
-    }
-  }, [navigate, token]);
+    return () => {
+      if (autoAdvanceTimerRef.current) {
+        clearTimeout(autoAdvanceTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     // Load questions based on country and visa type
@@ -54,12 +156,7 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack, userPlan
         setPreparationTips(tips || {general: [], specific: []});
       } catch (error) {
         console.error("Error loading preparation tips:", error);
-        // Check for authentication error
-        if (error.response && error.response.status === 401) {
-          navigate('/login');
-        } else {
-          setPreparationTips({general: [], specific: []});
-        }
+        setPreparationTips({general: [], specific: []});
       }
     }
     
@@ -70,18 +167,14 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack, userPlan
         setCommonMistakes(mistakes || []);
       } catch (error) {
         console.error("Error loading common mistakes:", error);
-        // Check for authentication error
-        if (error.response && error.response.status === 401) {
-          navigate('/login');
-        } else {
-          setCommonMistakes([]);
-        }
+        setCommonMistakes([]);
       }
     }
     
     fetchTips();
     fetchMistakes();
-  }, [selectedCountry, selectedVisaType, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCountry, selectedVisaType]);
 
   useEffect(() => {
     // Auto-scroll to the bottom of the conversation
@@ -110,6 +203,26 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack, userPlan
       textAreaRef.current.style.height = `${Math.max(textAreaRef.current.scrollHeight, 100)}px`;
     }
   }, [userResponse]);
+
+  useEffect(() => {
+    if (!interviewComplete) return;
+
+    try {
+      const savedSession = JSON.parse(localStorage.getItem('visaCoach:lastSession') || '{}');
+      if (!savedSession.interviewHistory) return;
+
+      localStorage.setItem('visaCoach:lastSession', JSON.stringify({
+        ...savedSession,
+        confidence: {
+          ...(savedSession.confidence || {}),
+          before: userConfidence,
+          after: postSessionConfidence,
+        },
+      }));
+    } catch (error) {
+      console.error('Unable to update saved confidence:', error);
+    }
+  }, [interviewComplete, postSessionConfidence, userConfidence]);
 
   const loadQuestions = () => {
     // Enhanced question sets - organized by country and visa type
@@ -175,19 +288,86 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack, userPlan
       }
     };
 
-    // Set questions or default message
-    if (questionSets[selectedCountry]?.[selectedVisaType]) {
-      setInterviewQuestions(questionSets[selectedCountry][selectedVisaType]);
+    const genericVisaQuestions = [
+      "What is the purpose of your trip or visa application?",
+      "Why did you choose this destination instead of another country?",
+      "How will you fund your stay, studies, or planned activities?",
+      "What ties do you have to your home country or current country of residence?",
+      "What are your plans after the visa period ends?",
+    ];
+
+    const questions = questionSets[selectedCountry]?.[selectedVisaType] || genericVisaQuestions;
+    setInterviewQuestions(questions.slice(0, SESSION_QUESTION_LIMIT));
+    setAgentResponse('');
+  };
+
+  const calculateInterviewStats = (history, context = sessionContext) => {
+    const answers = history.map(item => item.userResponse || '');
+    const combinedAnswers = answers.join(' ').toLowerCase();
+    const averageWords = answers.length
+      ? answers.reduce((sum, answer) => sum + answer.trim().split(/\s+/).filter(Boolean).length, 0) / answers.length
+      : 0;
+
+    const strongAreas = [];
+    const improvementAreas = [];
+
+    if (averageWords >= 25) {
+      strongAreas.push("Provides enough detail for review");
     } else {
-      setInterviewQuestions([]);
-      setAgentResponse("There are no questions available for this selection yet. Please choose another visa type or country.");
+      improvementAreas.push("Add specific details instead of short general answers");
     }
+
+    if (/(because|therefore|so that|my plan|i plan|after|return|continue)/.test(combinedAnswers)) {
+      strongAreas.push("Connects answers to a clear plan");
+    } else {
+      improvementAreas.push("Explain the plan behind each answer");
+    }
+
+    if (context.fundingSource?.trim()) {
+      strongAreas.push("Prepared a funding source before practice");
+    } else if (/(fund|sponsor|scholarship|salary|savings|bank|tuition|employer|company)/.test(combinedAnswers)) {
+      strongAreas.push("Mentions financial support");
+    } else {
+      improvementAreas.push("Clarify how the visit or program will be funded");
+    }
+
+    if (context.returnPlan?.trim()) {
+      strongAreas.push("Prepared a return plan or home-ties story");
+    } else if (/(home|return|family|job|employer|property|business|country|community)/.test(combinedAnswers)) {
+      strongAreas.push("Addresses return ties or home context");
+    } else {
+      improvementAreas.push("State the ties that support your return plan");
+    }
+
+    if (userNeeds.includes('english') && averageWords > 45) {
+      improvementAreas.push("Keep answers shorter so they are easier to deliver clearly");
+    }
+
+    const completionBoost = Math.min(20, history.length * 4);
+    const detailBoost = Math.min(25, Math.round(averageWords));
+    const overallScore = Math.min(90, 40 + completionBoost + detailBoost + (strongAreas.length * 5));
+
+    return {
+      strongAreas: strongAreas.length ? strongAreas : ["Completed the current practice step"],
+      improvementAreas: improvementAreas.length ? improvementAreas : ["Keep answers concise and consistent"],
+      overallScore
+    };
   };
 
   const handleUserResponse = async () => {
     if (!userResponse.trim()) {
       setFeedbackMessage("Please provide an answer before continuing.");
       return;
+    }
+
+    if (!firstAnswerTrackedRef.current) {
+      trackEvent('first_answer_submitted', {
+        sessionId,
+        country: selectedCountry,
+        visaType: selectedVisaType,
+        answerLength: userResponse.trim().length,
+      });
+      firstAnswerTrackedRef.current = true;
     }
 
     setFeedbackMessage("");
@@ -197,37 +377,58 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack, userPlan
     const newHistory = [...conversationHistory, {
       question: interviewQuestions[currentQuestionIndex],
       userResponse: userResponse,
-      agentResponse: ""
+      agentResponse: "",
+      feedbackSource: "",
+      feedback: null
     }];
     
     setConversationHistory(newHistory);
 
     try {
       // Get agent's response to user's answer
-      const response = await aiInterviewService.getAgentResponse(
+      const feedback = await aiInterviewService.getAgentResponse(
         interviewQuestions[currentQuestionIndex], 
         userResponse,
         selectedCountry,
-        selectedVisaType
+        selectedVisaType,
+        feedbackLevel,
+        {
+          confidence: userConfidence,
+          concerns: userNeeds,
+          context: sessionContext,
+        }
       );
+      const responseText = typeof feedback === 'string' ? feedback : feedback.text;
       
       // Update history with agent's response
-      newHistory[newHistory.length - 1].agentResponse = response;
+      newHistory[newHistory.length - 1].agentResponse = responseText;
+      newHistory[newHistory.length - 1].feedbackSource = typeof feedback === 'string' ? 'unknown' : feedback.source;
+      newHistory[newHistory.length - 1].feedbackModel = typeof feedback === 'string' ? '' : feedback.model;
+      newHistory[newHistory.length - 1].feedbackStyle = feedbackLevel;
+      newHistory[newHistory.length - 1].feedback = typeof feedback === 'string' ? null : feedback.feedback;
       setConversationHistory(newHistory);
-      setAgentResponse(response);
+      setAgentResponse(responseText);
+      trackEvent('feedback_source_used', {
+        sessionId,
+        country: selectedCountry,
+        visaType: selectedVisaType,
+        source: typeof feedback === 'string' ? 'unknown' : feedback.source,
+        model: typeof feedback === 'string' ? '' : feedback.model,
+        feedbackStyle: feedbackLevel,
+      });
       
-      // Update interview stats (this would be dynamic in a real implementation)
-      updateInterviewStats(newHistory);
+      const nextStats = updateInterviewStats(newHistory);
+
+      if (autoAdvanceTimerRef.current) {
+        clearTimeout(autoAdvanceTimerRef.current);
+      }
+
+      autoAdvanceTimerRef.current = setTimeout(() => {
+        handleNextQuestion(newHistory, nextStats);
+      }, AUTO_ADVANCE_DELAY_MS);
     } catch (error) {
       console.error("Error getting agent response:", error);
-      
-      // Check for authentication error
-      if (error.response && error.response.status === 401) {
-        // Token might be expired or invalid
-        navigate('/login');
-      } else {
-        setAgentResponse("I'm having trouble processing your response. Let's continue to the next question.");
-      }
+      setAgentResponse("I could not process that answer with the remote service, so keep going and use the final summary to review your response.");
     } finally {
       setIsLoading(false);
       setUserResponse(''); // Clear input field
@@ -235,28 +436,26 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack, userPlan
   };
 
   const updateInterviewStats = (history) => {
-    // This is a placeholder for real implementation
-    // In a real app, you'd analyze responses and provide meaningful feedback
-    const strongAreas = ["Study plans", "Financial arrangements"];
-    const improvementAreas = ["Post-graduation plans", "Ties to home country"];
-    
-    const totalQuestions = history.length;
-    const overallScore = Math.min(95, 65 + (totalQuestions * 3)); // Just for demonstration
-    
-    setInterviewStats({
-      strongAreas,
-      improvementAreas,
-      overallScore
-    });
+    const nextStats = calculateInterviewStats(history, sessionContext);
+    setInterviewStats(nextStats);
+    return nextStats;
   };
 
-  const handleNextQuestion = () => {
+  const handleNextQuestion = (history = conversationHistory, stats = interviewStats) => {
     const nextIndex = currentQuestionIndex + 1;
     
     if (nextIndex >= interviewQuestions.length) {
       setInterviewComplete(true);
       setAgentResponse("Thank you for completing the interview simulation. You can review your conversation history below.");
-      saveInterviewHistory();
+      saveInterviewHistory(history, stats);
+      trackEvent('session_completed', {
+        sessionId,
+        country: selectedCountry,
+        visaType: selectedVisaType,
+        questionsAnswered: history.length,
+        readinessScore: stats.overallScore,
+        feedbackLevel,
+      });
       setShowAnimation(true);
       setTimeout(() => setShowAnimation(false), 3000);
     } else {
@@ -266,27 +465,133 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack, userPlan
   };
 
   const startInterview = () => {
+    const nextSessionId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    setSessionId(nextSessionId);
+    firstAnswerTrackedRef.current = false;
     setShowPrep(false);
-    setAgentResponse("Welcome to your visa interview simulation. I'll be asking you questions about your visa application. Please answer honestly as you would in a real interview.");
+    setPostSessionConfidence(userConfidence);
+    trackEvent('session_started', {
+      sessionId: nextSessionId,
+      country: selectedCountry,
+      visaType: selectedVisaType,
+      feedbackLevel,
+      confidence: userConfidence,
+      concerns: userNeeds,
+    });
+    setAgentResponse("Welcome to your practice session. I will ask five visa interview-style questions. Answer honestly and concretely, as you would at the appointment.");
   };
 
-  const saveInterviewHistory = async () => {
+  const handleContextChange = (field, value) => {
+    setSessionContext(prev => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const getCleanSessionContext = () => Object.entries(sessionContext).reduce((cleaned, [key, value]) => {
+    cleaned[key] = typeof value === 'string' ? value.trim() : value;
+    return cleaned;
+  }, {});
+
+  const getContextSummaryLines = () => Object.entries(getCleanSessionContext())
+    .filter(([, value]) => value)
+    .map(([key, value]) => `${CONTEXT_FIELD_LABELS[key]}: ${value}`);
+
+  const saveInterviewHistory = async (history = conversationHistory, statsData = interviewStats) => {
+    const interviewData = {
+      sessionId,
+      country: selectedCountry,
+      visaType: selectedVisaType,
+      interviewHistory: history,
+      stats: statsData,
+      sessionContext: getCleanSessionContext(),
+      confidence: {
+        before: userConfidence,
+        after: postSessionConfidence,
+      },
+      concerns: userNeeds,
+      feedbackLevel,
+      savedAt: new Date().toISOString(),
+    };
+
     try {
-      const interviewData = {
-        country: selectedCountry,
-        visaType: selectedVisaType,
-        interviewHistory: conversationHistory,
-        stats: interviewStats
-      };
+      localStorage.setItem('visaCoach:lastSession', JSON.stringify(interviewData));
   
       const result = await aiInterviewService.saveInterviewHistory(interviewData);
       console.log('Interview history saved:', result);
+      setSaveMessage('Session saved locally.');
     } catch (error) {
       console.error('Error saving interview history:', error);
-      // Check for authentication error - but don't redirect, just log it
-      if (error.response && error.response.status === 401) {
-        console.log('Authentication error when saving history');
-      }
+      setSaveMessage('Session saved locally. Remote history is not configured yet.');
+    }
+  };
+
+  const formatFeedbackForSummary = (item) => {
+    if (!item.feedback) {
+      return item.agentResponse || 'No feedback captured.';
+    }
+
+    const lines = [
+      item.feedback.quickRead ? `Quick read: ${item.feedback.quickRead}` : '',
+      item.feedback.mainFix ? `Main fix: ${item.feedback.mainFix}` : '',
+      item.feedback.strongerAnswer ? `Stronger answer: ${item.feedback.strongerAnswer}` : '',
+      item.feedback.consistencyCheck ? `Consistency check: ${item.feedback.consistencyCheck}` : '',
+      Array.isArray(item.feedback.riskFlags) && item.feedback.riskFlags.length
+        ? `Risk flags: ${item.feedback.riskFlags.join('; ')}`
+        : '',
+      item.feedback.followUpQuestion ? `Follow-up: ${item.feedback.followUpQuestion}` : '',
+    ].filter(Boolean);
+
+    return lines.join('\n');
+  };
+
+  const buildSessionSummary = () => {
+    const contextLines = getContextSummaryLines();
+    const concernLines = userNeeds.map(need => CONCERN_LABELS[need]).filter(Boolean);
+    const lines = [
+      'VisaCoach Practice Summary',
+      `Country: ${selectedCountry}`,
+      `Visa type: ${selectedVisaType}`,
+      `Confidence before: ${userConfidence}/10`,
+      `Confidence after: ${postSessionConfidence}/10`,
+      ...(concernLines.length ? [`Concerns: ${concernLines.join(', ')}`] : []),
+      ...(contextLines.length ? ['', 'Applicant context:', ...contextLines] : []),
+      `Practice readiness: ${interviewStats.overallScore}%`,
+      '',
+      'Strengths:',
+      ...interviewStats.strongAreas.map(area => `- ${area}`),
+      '',
+      'Focus areas:',
+      ...interviewStats.improvementAreas.map(area => `- ${area}`),
+      '',
+      'Practice answers:',
+      ...conversationHistory.flatMap((item, index) => [
+        `${index + 1}. ${item.question}`,
+        `Answer: ${item.userResponse}`,
+        `Feedback: ${formatFeedbackForSummary(item)}`,
+        '',
+      ]),
+      'Note: This is practice support only. It is not legal advice and does not predict or guarantee a visa decision.',
+    ];
+
+    return lines.join('\n');
+  };
+
+  const handleCopySummary = async () => {
+    const summary = buildSessionSummary();
+    try {
+      await navigator.clipboard.writeText(summary);
+      trackEvent('summary_copied', {
+        sessionId,
+        country: selectedCountry,
+        visaType: selectedVisaType,
+        questionsAnswered: conversationHistory.length,
+      });
+      setSaveMessage('Summary copied to clipboard.');
+    } catch (error) {
+      console.error('Unable to copy summary:', error);
+      localStorage.setItem('visaCoach:lastSummary', summary);
+      setSaveMessage('Clipboard was unavailable, so the summary was saved locally.');
     }
   };
 
@@ -307,6 +612,13 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack, userPlan
 
   const currentQuestion = interviewQuestions[currentQuestionIndex];
   const isInterviewOver = currentQuestionIndex >= interviewQuestions.length || interviewComplete;
+  const latestConversationItem = conversationHistory[conversationHistory.length - 1];
+  const hasCurrentAnswerFeedback = Boolean(
+    latestConversationItem &&
+    latestConversationItem.question === currentQuestion &&
+    latestConversationItem.agentResponse
+  );
+  const hasAccountSession = Boolean(localStorage.getItem('token'));
 
   return (
     <div className="interview-container">
@@ -324,6 +636,70 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack, userPlan
       {showPrep ? (
         <div className="preparation-screen">
           <h3>Prepare for Your Interview</h3>
+
+          <div className="prep-section context-section">
+            <h4>Your Context</h4>
+            <div className="context-path-summary">
+              <span>Destination: {selectedCountry}</span>
+              <span>Visa type: {selectedVisaType}</span>
+            </div>
+            <div className="context-grid">
+              <label className="context-field">
+                <span>{CONTEXT_FIELD_LABELS.homeCountry}</span>
+                <input
+                  type="text"
+                  value={sessionContext.homeCountry}
+                  onChange={(e) => handleContextChange('homeCountry', e.target.value)}
+                  placeholder="Ghana"
+                />
+              </label>
+              <label className="context-field">
+                <span>{CONTEXT_FIELD_LABELS.institutionOrHost}</span>
+                <input
+                  type="text"
+                  value={sessionContext.institutionOrHost}
+                  onChange={(e) => handleContextChange('institutionOrHost', e.target.value)}
+                  placeholder="University, employer, host, or event"
+                />
+              </label>
+              <label className="context-field">
+                <span>{CONTEXT_FIELD_LABELS.programOrPurpose}</span>
+                <input
+                  type="text"
+                  value={sessionContext.programOrPurpose}
+                  onChange={(e) => handleContextChange('programOrPurpose', e.target.value)}
+                  placeholder="MS Computer Science, tourism, business meeting"
+                />
+              </label>
+              <label className="context-field">
+                <span>{CONTEXT_FIELD_LABELS.fundingSource}</span>
+                <input
+                  type="text"
+                  value={sessionContext.fundingSource}
+                  onChange={(e) => handleContextChange('fundingSource', e.target.value)}
+                  placeholder="Family sponsor, savings, scholarship"
+                />
+              </label>
+              <label className="context-field context-field-wide">
+                <span>{CONTEXT_FIELD_LABELS.returnPlan}</span>
+                <input
+                  type="text"
+                  value={sessionContext.returnPlan}
+                  onChange={(e) => handleContextChange('returnPlan', e.target.value)}
+                  placeholder="Job, family, business, property, or career plan at home"
+                />
+              </label>
+              <label className="context-field context-field-wide">
+                <span>{CONTEXT_FIELD_LABELS.notes}</span>
+                <textarea
+                  value={sessionContext.notes}
+                  onChange={(e) => handleContextChange('notes', e.target.value)}
+                  placeholder="Paste short SOP, resume, DS-160, or application notes"
+                  rows="3"
+                />
+              </label>
+            </div>
+          </div>
           
           <div className="prep-section">
             <h4>How confident are you about this interview?</h4>
@@ -510,7 +886,7 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack, userPlan
                   </div>
                 </div>
                 
-                {item.agentResponse && feedbackLevel !== 'realistic' && (
+                {item.agentResponse && (
                   <div className="agent-feedback">
                     <div className="avatar agent-avatar">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -518,11 +894,25 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack, userPlan
                         <circle cx="12" cy="7" r="4"></circle>
                       </svg>
                     </div>
-                    <div className="message-bubble agent-bubble feedback-bubble">
-                      <p>{feedbackLevel === 'brief' 
-                        ? item.agentResponse.split('.')[0] + '.' // Just the first sentence
-                        : item.agentResponse}
-                      </p>
+                    <div className={`message-bubble agent-bubble feedback-bubble ${item.feedbackStyle === 'realistic' ? 'realistic-bubble' : ''}`}>
+                      <span className={`feedback-source ${item.feedbackSource || 'unknown'}`}>
+                        {item.feedbackStyle === 'realistic'
+                          ? `Officer-style${item.feedbackSource === 'gemini' ? ' · Gemini' : ''}`
+                          : item.feedbackSource === 'gemini'
+                          ? `Gemini${item.feedbackModel ? ` · ${item.feedbackModel}` : ''}`
+                          : item.feedbackSource === 'local'
+                            ? 'Local fallback'
+                            : 'Feedback'}
+                      </span>
+                      {item.feedbackStyle === 'realistic' ? (
+                        <FormattedFeedback text={item.agentResponse} />
+                      ) : (
+                        <StructuredFeedback
+                          feedback={item.feedback}
+                          fallbackText={item.agentResponse}
+                          brief={item.feedbackStyle === 'brief'}
+                        />
+                      )}
                     </div>
                   </div>
                 )}
@@ -574,7 +964,7 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack, userPlan
                   onKeyPress={handleKeyPress}
                   placeholder="Type your answer here..."
                   className="response-input"
-                  disabled={isLoading}
+                  disabled={isLoading || hasCurrentAnswerFeedback}
                   rows="3"
                 />
                 
@@ -584,42 +974,33 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack, userPlan
               </div>
               
               <div className="button-group">
-                <button 
-                  className="submit-button"
-                  onClick={handleUserResponse}
-                  disabled={isLoading}
-                >
-                  {isLoading ? `Processing${loadingDots}` : "Submit Answer"}
-                </button>
-                
-                {agentResponse && !isLoading && feedbackLevel !== 'realistic' && (
+                {!hasCurrentAnswerFeedback && (
                   <button 
-                    className="next-button"
-                    onClick={handleNextQuestion}
+                    className="submit-button"
+                    onClick={handleUserResponse}
+                    disabled={isLoading}
                   >
-                    {currentQuestionIndex < interviewQuestions.length - 1 ? "Next Question" : "Complete Interview"}
+                    {isLoading ? `Processing${loadingDots}` : "Submit Answer"}
                   </button>
                 )}
                 
-                {feedbackLevel === 'realistic' && !isLoading && userResponse.length === 0 && conversationHistory.length > 0 && (
-                  <button 
-                    className="next-button"
-                    onClick={handleNextQuestion}
-                  >
-                    {currentQuestionIndex < interviewQuestions.length - 1 ? "Next Question" : "Complete Interview"}
-                  </button>
+                {hasCurrentAnswerFeedback && !isLoading && (
+                  <p className="auto-advance-status">
+                    {currentQuestionIndex < interviewQuestions.length - 1 ? "Moving to the next question..." : "Preparing your summary..."}
+                  </p>
                 )}
+                
               </div>
             </div>
           ) : (
             <div className={`interview-complete ${showAnimation ? 'show-animation' : ''}`}>
               <div className="completion-message">
                 <div className="completion-header">
-                  <div className="completion-icon">🎉</div>
+                  <div className="completion-icon">✓</div>
                   <h3>Interview Simulation Complete</h3>
                 </div>
                 
-                <p>You've completed all questions for this visa interview simulation.</p>
+                <p>You completed the five-question visa practice sprint. Review the summary, copy it, and use it to tighten your next attempt.</p>
                 
                 <div className="interview-summary">
                   <div className="summary-score">
@@ -642,9 +1023,24 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack, userPlan
                       </svg>
                     </div>
                     <div className="score-info">
-                      <h4>Overall Performance</h4>
-                      <p>Based on {conversationHistory.length} questions</p>
+                      <h4>Practice Readiness</h4>
+                      <p>Based on {conversationHistory.length} practice answers</p>
                     </div>
+                  </div>
+
+                  <div className="confidence-comparison">
+                    <div>
+                      <h4>Confidence Check</h4>
+                      <p>Before: {userConfidence}/10 · After: {postSessionConfidence}/10</p>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={postSessionConfidence}
+                      onChange={(e) => setPostSessionConfidence(parseInt(e.target.value))}
+                      aria-label="Confidence after this practice session"
+                    />
                   </div>
                   
                   <div className="summary-details">
@@ -681,11 +1077,31 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack, userPlan
                 </div>
                 
                 <div className="completion-actions">
+                  <button className="copy-summary-button" onClick={handleCopySummary}>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    Copy Summary
+                  </button>
+
                   <button className="restart-button" onClick={() => {
+                    const nextSessionId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+                    setSessionId(nextSessionId);
+                    firstAnswerTrackedRef.current = false;
                     setCurrentQuestionIndex(0);
                     setConversationHistory([]);
                     setAgentResponse("Welcome back! Let's start the interview again.");
                     setInterviewComplete(false);
+                    trackEvent('session_started', {
+                      sessionId: nextSessionId,
+                      country: selectedCountry,
+                      visaType: selectedVisaType,
+                      feedbackLevel,
+                      confidence: userConfidence,
+                      concerns: userNeeds,
+                      restarted: true,
+                    });
                   }}>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M23 4v6h-6"></path>
@@ -697,6 +1113,8 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack, userPlan
                   
                   <button className="prep-button" onClick={() => {
                     setShowPrep(true);
+                    setSessionId('');
+                    firstAnswerTrackedRef.current = false;
                     setCurrentQuestionIndex(0);
                     setConversationHistory([]);
                     setInterviewComplete(false);
@@ -708,17 +1126,21 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack, userPlan
                     Review Preparation Tips
                   </button>
                 </div>
-                
-                <div className="premium-offer">
-                  <h4>Want more detailed feedback?</h4>
-                  <p>Upgrade to VisaCoach Premium for personalized feedback from immigration experts</p>
-                  <button className="premium-button">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                    </svg>
-                    Upgrade to Premium
-                  </button>
-                </div>
+
+                {!hasAccountSession && (
+                  <div className="account-save-callout">
+                    <div>
+                      <h4>Save future sessions</h4>
+                      <p>Create an account after practicing to keep your history across devices.</p>
+                    </div>
+                    <div className="account-save-actions">
+                      <Link to="/register" className="copy-summary-button">Create Account</Link>
+                      <Link to="/login" className="prep-button">Sign In</Link>
+                    </div>
+                  </div>
+                )}
+
+                {saveMessage && <p className="save-message">{saveMessage}</p>}
               </div>
             </div>
           )}

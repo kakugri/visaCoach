@@ -50,6 +50,8 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+frontend/test-results/
+frontend/playwright-report/
 
 # Translations
 *.mo
@@ -129,6 +131,14 @@ celerybeat.pid
 
 # Environments
 .env
+.env.*
+backend/.env
+backend/.env.*
+frontend/.env
+frontend/.env.*
+!.env.example
+!backend/.env.example
+!frontend/.env.example
 .venv
 env/
 venv/

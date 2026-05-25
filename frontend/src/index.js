@@ -6,10 +6,13 @@ import App from "./App";
 
 const CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID; // Ensure this is set in .env
 
-ReactDOM.createRoot(document.getElementById("root")).render(
+const app = CLIENT_ID ? (
     <GoogleOAuthProvider clientId={CLIENT_ID}>
         <App />
     </GoogleOAuthProvider>
-  );
+) : (
+    <App />
+);
 
+ReactDOM.createRoot(document.getElementById("root")).render(app);
 

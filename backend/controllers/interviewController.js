@@ -4,7 +4,247 @@ require('dotenv').config();
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.5-flash" });
+const ACTIVE_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+
+const PROMPT_PROFILES = {
+  f1Student: {
+    label: "F1 student visa",
+    roleFocus: "study plan, school/program fit, funding, home ties, and post-study plans",
+    rubric: [
+      "Does the answer connect the chosen program to prior education or career goals?",
+      "Does it explain funding with facts that can match documents?",
+      "Does it show credible plans outside the destination country after study?",
+      "Does it avoid sounding primarily focused on long-term work in the destination country?",
+    ],
+  },
+  b1b2Visitor: {
+    label: "B1/B2 visitor or business visa",
+    roleFocus: "trip purpose, duration, itinerary, funds, occupation, host details, and return ties",
+    rubric: [
+      "Does the answer state a specific temporary purpose?",
+      "Does it keep the trip timeline credible and bounded?",
+      "Does it mention who pays and where the applicant will stay when relevant?",
+      "Does it support return intent through work, family, property, school, or other ties?",
+    ],
+  },
+  genericVisa: {
+    label: "general visa interview",
+    roleFocus: "purpose, funding, timeline, consistency, and return or onward plans",
+    rubric: [
+      "Does the answer directly address the question?",
+      "Does it include one concrete fact rather than a vague claim?",
+      "Does it stay consistent with the applicant context and likely documents?",
+      "Does it avoid promises, exaggeration, or unsupported claims?",
+    ],
+  },
+};
+
+const CONTEXT_LABELS = {
+  homeCountry: "home country/current residence",
+  institutionOrHost: "school/employer/host/program",
+  programOrPurpose: "program/role/trip purpose",
+  fundingSource: "funding source",
+  returnPlan: "return plan/home ties",
+  notes: "application notes",
+};
+
+const normalizeString = (value) => (typeof value === "string" ? value.trim() : "");
+
+const getPromptProfile = (country, visaType) => {
+  const normalizedVisa = normalizeString(visaType).toUpperCase();
+  const normalizedCountry = normalizeString(country).toUpperCase();
+
+  if (normalizedCountry === "US" && normalizedVisa === "F1") {
+    return PROMPT_PROFILES.f1Student;
+  }
+
+  if (normalizedCountry === "US" && ["B1/B2", "B1", "B2"].includes(normalizedVisa)) {
+    return PROMPT_PROFILES.b1b2Visitor;
+  }
+
+  if (["STUDENT", "STUDY PERMIT", "TIER 4"].includes(normalizedVisa)) {
+    return PROMPT_PROFILES.f1Student;
+  }
+
+  return PROMPT_PROFILES.genericVisa;
+};
+
+const buildContextBlock = (sessionContext = {}) => {
+  const context = sessionContext.context || {};
+  const lines = [];
+
+  Object.entries(CONTEXT_LABELS).forEach(([key, label]) => {
+    const value = normalizeString(context[key]);
+    if (value) {
+      lines.push(`- ${label}: ${value.slice(0, 700)}`);
+    }
+  });
+
+  if (Number.isFinite(Number(sessionContext.confidence))) {
+    lines.push(`- confidence before practice: ${Number(sessionContext.confidence)}/10`);
+  }
+
+  if (Array.isArray(sessionContext.concerns) && sessionContext.concerns.length) {
+    lines.push(`- selected concerns: ${sessionContext.concerns.join(", ")}`);
+  }
+
+  return lines.length ? lines.join("\n") : "- no extra applicant context provided";
+};
+
+const extractJson = (text) => {
+  const cleaned = text
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```$/i, "")
+    .trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch (firstError) {
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+
+    if (start === -1 || end === -1 || end <= start) {
+      throw firstError;
+    }
+
+    return JSON.parse(cleaned.slice(start, end + 1));
+  }
+};
+
+const normalizeFeedback = (feedback = {}) => ({
+  quickRead: normalizeString(feedback.quickRead),
+  mainFix: normalizeString(feedback.mainFix),
+  strongerAnswer: normalizeString(feedback.strongerAnswer),
+  consistencyCheck: normalizeString(feedback.consistencyCheck || feedback.check),
+  riskFlags: Array.isArray(feedback.riskFlags)
+    ? feedback.riskFlags.map(normalizeString).filter(Boolean).slice(0, 3)
+    : [],
+  followUpQuestion: normalizeString(feedback.followUpQuestion),
+});
+
+const feedbackToMarkdown = (feedback) => [
+  feedback.quickRead ? `**Quick read:** ${feedback.quickRead}` : "",
+  feedback.mainFix ? `**Main fix:** ${feedback.mainFix}` : "",
+  feedback.strongerAnswer ? `**Stronger answer:** ${feedback.strongerAnswer}` : "",
+  feedback.consistencyCheck ? `**Check:** ${feedback.consistencyCheck}` : "",
+  feedback.riskFlags.length ? `**Risk flags:** ${feedback.riskFlags.join("; ")}` : "",
+  feedback.followUpQuestion ? `**Follow-up:** ${feedback.followUpQuestion}` : "",
+].filter(Boolean).join("\n");
+
+const buildLocalFeedback = ({ question, userAnswer, country, visaType, sessionContext }) => {
+  const answer = normalizeString(userAnswer);
+  const context = sessionContext?.context || {};
+  const wordCount = answer.split(/\s+/).filter(Boolean).length;
+  const quickRead = wordCount < 20
+    ? "The answer is understandable but too brief to sound fully prepared."
+    : "The answer gives enough material to review.";
+  const mainFix = context.returnPlan
+    ? `Connect the answer to your return plan or home ties: ${context.returnPlan}.`
+    : "Add one concrete detail and explain why it matters.";
+  const consistencyCheck = context.fundingSource
+    ? `Make sure this matches funding evidence for ${context.fundingSource}.`
+    : "Check that this answer matches your application forms and supporting documents.";
+  const feedback = normalizeFeedback({
+    quickRead,
+    mainFix,
+    strongerAnswer: `A stronger answer should directly answer "${question}" with one truthful reason and one concrete fact.`,
+    consistencyCheck,
+    riskFlags: wordCount < 10 ? ["Very short answer"] : [],
+    followUpQuestion: `What specific detail can you add for your ${country} ${visaType} interview?`,
+  });
+
+  return {
+    response: feedbackToMarkdown(feedback),
+    feedback,
+  };
+};
+
+const validateAgentRequest = (body = {}) => {
+  const fields = {
+    question: normalizeString(body.question),
+    userAnswer: normalizeString(body.userAnswer),
+    country: normalizeString(body.country),
+    visaType: normalizeString(body.visaType),
+  };
+
+  const missing = Object.entries(fields)
+    .filter(([, value]) => !value)
+    .map(([key]) => key);
+
+  return {
+    valid: missing.length === 0,
+    missing,
+    fields,
+  };
+};
+
+const buildAgentPrompt = ({
+  question,
+  userAnswer,
+  country,
+  visaType,
+  feedbackStyle = "detailed",
+  sessionContext = {},
+}) => {
+  const isRealistic = feedbackStyle === "realistic";
+  const contextBlock = buildContextBlock(sessionContext);
+  const promptProfile = getPromptProfile(country, visaType);
+  const rubricBlock = promptProfile.rubric.map((item) => `- ${item}`).join("\n");
+
+  if (isRealistic) {
+    return `You are acting as a visa interview officer in a ${country} ${visaType} practice interview.
+
+Visa prompt profile: ${promptProfile.label}
+Officer focus: ${promptProfile.roleFocus}
+
+Question: "${question}"
+Applicant answer: "${userAnswer}"
+Applicant context:
+${contextBlock}
+
+Respond as the officer would in the moment.
+
+Rules:
+- Keep the response under 35 words.
+- Do not provide coaching, scoring, or a long explanation.
+- If the answer is too vague, ask one concise follow-up question.
+- If the answer is adequate, acknowledge it and move on naturally.
+- Do not predict or guarantee any visa outcome.`;
+  }
+
+  return `You are a visa interview practice coach helping an applicant prepare for a ${country} ${visaType} interview.
+
+Visa prompt profile: ${promptProfile.label}
+Coaching focus: ${promptProfile.roleFocus}
+
+Question: "${question}"
+Applicant answer: "${userAnswer}"
+Applicant context:
+${contextBlock}
+
+Evaluate using this rubric:
+${rubricBlock}
+
+Return only valid JSON with this exact shape:
+{
+  "quickRead": "One sentence on how the answer lands.",
+  "mainFix": "One specific improvement the applicant should make.",
+  "strongerAnswer": "One improved answer in the applicant's voice.",
+  "consistencyCheck": "One document or fact they should keep consistent.",
+  "riskFlags": ["Up to three concise red flags or empty array."],
+  "followUpQuestion": "One concise follow-up question an officer might ask."
+}
+
+Rules:
+- Keep the total JSON value text under 150 words.
+- Use the applicant context when it is relevant, especially funding, return plan, school/employer/host, concerns, and confidence.
+- Do not predict or guarantee a visa outcome.
+- Do not provide legal advice.
+- Do not repeat the full applicant answer.
+- Do not include Markdown or code fences.`;
+};
 
 // const configuration = new Configuration({
 //   apiKey: process.env.OPENAI_API_KEY,
@@ -13,18 +253,37 @@ const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 const getAgentResponse = async (req, res) => {
   try {
-    const { question, userAnswer, country, visaType } = req.body;
-    
-    // Create prompt for the AI
-    const prompt = `You are a visa officer for ${country} conducting an interview for a ${visaType} visa application. 
-    The applicant was asked: "${question}" 
-    They responded: "${userAnswer}"
-    
-    Provide feedback on this response. Consider:
-    1. How well it addresses the question
-    2. Any red flags or inconsistencies
-    3. What could be improved
-    4. How a real visa officer might react`;
+    const {
+      question,
+      userAnswer,
+      country,
+      visaType,
+      feedbackStyle = "detailed",
+      sessionContext = {},
+    } = req.body;
+
+    const validation = validateAgentRequest(req.body);
+
+    if (!validation.valid) {
+      return res.status(400).json({
+        error: "question, userAnswer, country, and visaType are required",
+        missing: validation.missing,
+      });
+    }
+
+    const safeQuestion = validation.fields.question;
+    const safeUserAnswer = validation.fields.userAnswer;
+    const safeCountry = validation.fields.country;
+    const safeVisaType = validation.fields.visaType;
+    const isRealistic = feedbackStyle === "realistic";
+    const prompt = buildAgentPrompt({
+      question: safeQuestion,
+      userAnswer: safeUserAnswer,
+      country: safeCountry,
+      visaType: safeVisaType,
+      feedbackStyle,
+      sessionContext,
+    });
     
     // const completion = await openai.createCompletion({
     //   model: "gpt-4", // or other appropriate model
@@ -34,12 +293,46 @@ const getAgentResponse = async (req, res) => {
     // });
 
     const result = await model.generateContent(prompt);
-    res.json({ response: result.response.text().trim() });
-    console.log(result.response.text());
+    const rawText = result.response.text().trim();
+
+    if (isRealistic) {
+      return res.json({
+        response: rawText,
+        source: "gemini",
+        model: ACTIVE_MODEL,
+      });
+    }
+
+    const feedback = normalizeFeedback(extractJson(rawText));
+
+    res.json({
+      response: feedbackToMarkdown(feedback),
+      feedback,
+      source: "gemini",
+      model: ACTIVE_MODEL,
+    });
     
     // res.json({ response: completion.data.choices[0].text.trim() });
   } catch (error) {
     console.error('Error in AI response:', error);
+    if (req.body?.question && req.body?.userAnswer && req.body?.country && req.body?.visaType) {
+      if (req.body.feedbackStyle === "realistic") {
+        return res.status(200).json({
+          response: "Thank you. Please be ready to explain that with one concrete detail if asked.",
+          source: "local",
+          model: "local-fallback",
+        });
+      }
+
+      const localFeedback = buildLocalFeedback(req.body);
+
+      return res.status(200).json({
+        ...localFeedback,
+        source: "local",
+        model: "local-fallback",
+      });
+    }
+
     res.status(500).json({ error: "Failed to generate response" });
   }
 };
@@ -176,26 +469,15 @@ const getCommonMistakes = async (req, res) => {
 module.exports = {
   getAgentResponse,
   getPreInterviewTips,
-  getCommonMistakes
+  getCommonMistakes,
+  _test: {
+    buildAgentPrompt,
+    buildContextBlock,
+    buildLocalFeedback,
+    extractJson,
+    feedbackToMarkdown,
+    getPromptProfile,
+    normalizeFeedback,
+    validateAgentRequest,
+  },
 };
-
-// // In MVP, we're mostly using the frontend mockAgentService for simplicity.
-// // This controller is kept very basic, just to show backend structure if you want to expand later.
-
-// const getAgentResponse = async (req, res) => {
-//     // In a real app, this would call the GPT service (or in-house model)
-//     // For MVP backend example, just echo back a simplified message
-//     const { question, userAnswer } = req.body;
-  
-//     if (!question || !userAnswer) {
-//       return res.status(400).json({ error: "Question and user response are required." });
-//     }
-  
-//     const mockResponse = `[Mock Backend Response] -  Received question: "${question}" and your answer. Backend processing simulated.`;
-  
-//     res.json({ response: mockResponse });
-//   };
-  
-//   module.exports = {
-//     getAgentResponse,
-//   };

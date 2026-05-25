@@ -7,14 +7,20 @@ const User = require('../models/User');
 const { generateToken, verifyToken } = require('../utils/authUtils');
 
 // Initialize Google OAuth client
-const client = new OAuth2Client(process.env.REACT_APP_GOOGLE_CLIENT_ID);
+const getGoogleClientId = () => process.env.GOOGLE_CLIENT_ID || process.env.REACT_APP_GOOGLE_CLIENT_ID;
+const client = new OAuth2Client(getGoogleClientId());
 
 // Verify Google token function
 const verifyGoogleToken = async (token) => {
   try {
+    const googleClientId = getGoogleClientId();
+    if (!googleClientId) {
+      throw new Error('Google authentication is not configured');
+    }
+
     const ticket = await client.verifyIdToken({
       idToken: token,
-      audience: process.env.REACT_APP_GOOGLE_CLIENT_ID,
+      audience: googleClientId,
     });
     return ticket.getPayload();
   } catch (error) {

@@ -17,6 +17,7 @@ const userSchema = new mongoose.Schema({
   interviewDate: { type: Date },
   subscriptionStatus: { type: String, default: 'free' }, // free, basic, pro, premium
   interviewHistory: [{ // Interview history
+    sessionId: { type: String },
     date: { type: Date, default: Date.now },
     country: { type: String },
     visaType: { type: String },
@@ -24,8 +25,30 @@ const userSchema = new mongoose.Schema({
       question: { type: String },
       answer: { type: String },
       feedback: { type: String },
+      feedbackDetails: { type: mongoose.Schema.Types.Mixed },
+      feedbackSource: { type: String },
+      feedbackStyle: { type: String },
       timeTaken: {type: Number}
     }],
+    sessionContext: {
+      homeCountry: { type: String },
+      institutionOrHost: { type: String },
+      programOrPurpose: { type: String },
+      fundingSource: { type: String },
+      returnPlan: { type: String },
+      notes: { type: String },
+    },
+    confidence: {
+      before: { type: Number },
+      after: { type: Number },
+    },
+    concerns: [{ type: String }],
+    feedbackLevel: { type: String },
+    stats: {
+      overallScore: { type: Number },
+      strongAreas: [{ type: String }],
+      improvementAreas: [{ type: String }],
+    },
     timeTakenForInterview: {type: Number},
   }],
   lastLogin: { type: Date, default: Date.now },

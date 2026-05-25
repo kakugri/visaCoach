@@ -1,0 +1,11 @@
+source/.git
+source/.github
+source/**/node_modules
+source/**/build
+source/**/coverage
+source/**/test-results
+source/**/playwright-report
+source/**/.env
+source/**/.env.*
+!source/**/.env.example
+source/database.xlsx

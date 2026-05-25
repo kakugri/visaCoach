@@ -45,6 +45,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-height: 132px;
   padding: 1.25rem 1rem;
   background-color: #f8fafc;
   border-radius: 12px;
@@ -87,6 +88,7 @@
   font-size: 0.95rem;
   color: #1e293b;
   text-align: center;
+  overflow-wrap: anywhere;
 }
 
 /* Visa Type Selection */
@@ -144,6 +146,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-height: 142px;
   padding: 1.25rem 1rem;
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
@@ -184,6 +187,7 @@
   font-size: 0.95rem;
   color: #1e293b;
   text-align: center;
+  overflow-wrap: anywhere;
 }
 
 /* Info Tooltip */
@@ -308,6 +312,38 @@
   }
   
   .country-visa-container {
-    padding: 1.5rem;
+    padding: 1rem;
+    border-radius: 8px;
+  }
+
+  .form-title {
+    font-size: 1.4rem;
+  }
+
+  .country-card,
+  .visa-type-card {
+    min-height: 118px;
+    padding: 1rem 0.65rem;
+    border-radius: 8px;
+  }
+
+  .country-flag,
+  .visa-icon {
+    font-size: 1.75rem;
+  }
+
+  .country-name,
+  .visa-name {
+    font-size: 0.84rem;
+  }
+
+  .visa-type-container {
+    padding: 1rem;
+    border-radius: 8px;
+  }
+
+  .visa-section-title {
+    align-items: flex-start;
+    font-size: 1rem;
   }
 }

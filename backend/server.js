@@ -1,30 +1,55 @@
-// Fix for backend/server.js - Authentication Middleware
-
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const interviewRoutes = require('./routes/interviewRoutes');
 const authRoutes = require('./routes/authRoutes');
 const { verifyToken } = require('./utils/authUtils');
+const User = require('./models/User');
+const { getRuntimeConfig, validateRuntimeConfig } = require('./config/runtimeConfig');
+const { createErrorHandler, createNotFoundHandler } = require('./middleware/errorHandlers');
+const { createRequestLogger } = require('./middleware/requestLogger');
+const { getHealthPayload } = require('./utils/health');
 
 const app = express();
-const port = process.env.PORT || 5000;
+const startedAt = Date.now();
+const config = getRuntimeConfig();
+const validation = validateRuntimeConfig(config);
 
-require('dotenv').config();
+validation.warnings.forEach((warning) => console.warn(`[config warning] ${warning}`));
+
+if (validation.errors.length) {
+  validation.errors.forEach((error) => console.error(`[config error] ${error}`));
+  process.exit(1);
+}
+
+app.set('trust proxy', 1);
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('MongoDB Connected'))
-.catch((err) => console.log(err));
+if (process.env.MONGODB_URI) {
+  mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('MongoDB Connected'))
+  .catch((err) => console.log(err));
+}
 
+app.use(createRequestLogger({ enabled: config.requestLogging }));
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin(origin, callback) {
+    if (!origin || config.allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`Origin ${origin} is not allowed by CORS`));
+  },
   credentials: true
 }));
-app.use(express.json());
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  next();
+});
+app.use(express.json({ limit: config.jsonBodyLimit }));
 
 // Improved Authentication Middleware
 const authenticate = (req, res, next) => {
@@ -65,12 +90,20 @@ app.get('/api/profile', authenticate, async (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
-app.use('/api/interview', authenticate, interviewRoutes);
+app.use('/api/interview', interviewRoutes);
+
+app.get(['/health', '/api/health'], (req, res) => {
+  const payload = getHealthPayload({ mongoose, config, startedAt });
+  res.status(payload.status === 'ok' ? 200 : 503).json(payload);
+});
 
 app.get('/', (req, res) => {
   res.send('Visa Prep Backend MVP is running!');
 });
 
-app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
+app.use(createNotFoundHandler());
+app.use(createErrorHandler());
+
+app.listen(config.port, config.host, () => {
+  console.log(`Server listening on http://${config.host}:${config.port}`);
 });

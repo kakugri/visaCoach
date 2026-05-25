@@ -1,58 +1,34 @@
 import React, { useState, createContext, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Outlet, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import InterviewPage from './pages/InterviewPage';
-import LandingPage from './pages/LandingPage';
 import Login from './components/Login';
 import Register from './components/Register';
 import GoogleAuth from './components/GoogleAuth';
 import ProfilePage from './components/ProfilePage';
 import CountrySelect from './components/CountrySelect';
 import Navbar from './components/Navbar'; // Create this component for consistent navigation
+import InfoPage from './pages/InfoPage';
+import { migrateLocalSessionToAccount } from './services/sessionMigration';
 
 export const UserContext = createContext();
 
 function App() {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(Boolean(token));
   const [selectedCountry, setSelectedCountry] = useState('');
   const [selectedVisaType, setSelectedVisaType] = useState('');
 
   useEffect(() => {
-    if (token) {
-      setIsLoggedIn(true);
-      // Add token validation logic here
-      // Consider adding a function to fetch user data with the token
-      const validateToken = async () => {
-        try {
-          // Replace with your actual API endpoint
-          const response = await fetch('/api/validate-token', {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-          
-          if (response.ok) {
-            const userData = await response.json();
-            setUser(userData);
-          } else {
-            // Token invalid
-            handleLogout();
-          }
-        } catch (error) {
-          console.error('Token validation error:', error);
-        }
-      };
-      
-      // validateToken();
-    }
+    setIsLoggedIn(Boolean(token));
   }, [token]);
 
-  const handleLoginSuccess = (user, token) => {
+  const handleLoginSuccess = async (user, token) => {
     setUser(user);
     setToken(token);
     localStorage.setItem('token', token);
     setIsLoggedIn(true);
+    return migrateLocalSessionToAccount(token);
   };
 
   const handleLogout = () => {
@@ -96,17 +72,7 @@ function App() {
           
           <Routes>
             {/* Public routes */}
-            <Route 
-              path="/" 
-              element={
-                <LandingPage 
-                  onSelectCountry={handleCountrySelect} 
-                  onSelectVisaType={handleVisaTypeSelect}
-                  selectedCountry={selectedCountry}
-                  selectedVisaType={selectedVisaType}
-                />
-              } 
-            />
+            <Route path="/" element={<InterviewPage />} />
             <Route 
               path="/login" 
               element={
@@ -127,6 +93,11 @@ function App() {
               path="/google"
               element={<GoogleAuth onLoginSuccess={handleLoginSuccess} />}
             />
+            <Route path="/interview" element={<InterviewPage />} />
+            <Route path="/about" element={<InfoPage type="about" />} />
+            <Route path="/privacy" element={<InfoPage type="privacy" />} />
+            <Route path="/terms" element={<InfoPage type="terms" />} />
+            <Route path="/contact" element={<InfoPage type="contact" />} />
             
             {/* Protected routes */}
             <Route element={<ProtectedRoute />}>
@@ -141,16 +112,8 @@ function App() {
                   />
                 } 
               />
-              <Route 
-                path="/interview" 
-                element={
-                  <InterviewPage 
-                    selectedCountry={selectedCountry} 
-                    selectedVisaType={selectedVisaType}
-                  />
-                } 
-              />
-              <Route path="/profile" element={<ProfilePage user={user} />} />
+              <Route path="/profile" element={<ProfilePage user={user} initialTab="sessions" />} />
+              <Route path="/history" element={<ProfilePage user={user} initialTab="sessions" />} />
             </Route>
             
             {/* Fallback for undefined routes */}

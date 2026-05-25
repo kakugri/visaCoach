@@ -14,9 +14,6 @@ function InterviewPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [animateIn, setAnimateIn] = useState(false);
-  const [showPremiumBanner, setShowPremiumBanner] = useState(true);
-  const [userPlan, setUserPlan] = useState('free'); // 'free', 'premium', 'pro'
-  const [interviewsLeft, setInterviewsLeft] = useState(3);
   const selectionRef = useRef(null);
 
   useEffect(() => {
@@ -69,26 +66,12 @@ function InterviewPage() {
   };
 
   const goToHome = () => {
+    setSelectedCountry('');
+    setSelectedVisaType('');
+    setLoadingProgress(0);
     navigate('/');
   };
   
-  const handleDismissBanner = () => {
-    setShowPremiumBanner(false);
-  };
-  
-  const handleUpgrade = () => {
-    navigate('/pricing');
-  };
-  
-  const renderInterviewsLeftBadge = () => {
-    return (
-      <div className={`interviews-left ${interviewsLeft <= 1 ? 'critical' : interviewsLeft <= 2 ? 'warning' : ''}`}>
-        <span className="interviews-icon">🎯</span>
-        <span className="interviews-text">{interviewsLeft} {interviewsLeft === 1 ? 'interview' : 'interviews'} left today</span>
-      </div>
-    );
-  };
-
   return (
     <div className="interview-page">
       <header className="interview-header">
@@ -98,39 +81,14 @@ function InterviewPage() {
             <span className="logo-text">VisaCoach</span>
           </div>
           <div className="header-actions">
-            {userPlan === 'free' && renderInterviewsLeftBadge()}
-            <div className="plan-badge">
-              <span className={`plan-icon ${userPlan}`}>{userPlan === 'free' ? '🔹' : userPlan === 'premium' ? '⭐' : '🌟'}</span>
-              <span className="plan-name">{userPlan.charAt(0).toUpperCase() + userPlan.slice(1)} Plan</span>
-            </div>
-            <button className="btn btn-outline" onClick={goToHome}>Dashboard</button>
+            <span className="mvp-badge">Practice MVP</span>
+            <button className="btn btn-outline" onClick={goToHome}>Home</button>
           </div>
         </div>
       </header>
 
       <main className={`interview-main ${animateIn ? 'animate-in' : 'animate-out'}`}>
         <div className="container">
-          {showPremiumBanner && userPlan === 'free' && (
-            <div className="premium-banner">
-              <div className="banner-content">
-                <div className="banner-icon">✨</div>
-                <div className="banner-text">
-                  <h3>Upgrade to Premium</h3>
-                  <p>Get unlimited interviews, expert feedback, and downloadable preparation guides.</p>
-                </div>
-                <div className="banner-actions">
-                  <button className="btn btn-premium" onClick={handleUpgrade}>Upgrade Now</button>
-                  <button className="btn-close" onClick={handleDismissBanner} aria-label="Close banner">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="18" y1="6" x2="6" y2="18"></line>
-                      <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          
           {isLoading ? (
             <div className="loading-screen">
               <h2>Preparing Your Interview</h2>
@@ -169,25 +127,26 @@ function InterviewPage() {
           ) : !selectedCountry || !selectedVisaType ? (
             <div className="selection-screen" ref={selectionRef}>
               <div className="hero-section">
-                <h1 className="page-title">Master Your <span className="gradient-text">Visa Interview</span></h1>
-                <p className="page-subtitle">Practice with our AI-powered mock interviews tailored to your specific visa application</p>
+                <h1 className="page-title">Practice a <span className="gradient-text">Visa Interview</span> in Five Minutes</h1>
+                <p className="page-subtitle">Choose a destination and visa type, answer a short set of realistic questions, then review focused feedback you can use before the real appointment.</p>
                 <div className="hero-stats">
                   <div className="stat-item">
-                    <div className="stat-value">95%</div>
-                    <div className="stat-label">Success Rate</div>
+                    <div className="stat-value">5</div>
+                    <div className="stat-label">Question Sprint</div>
                   </div>
                   <div className="stat-divider"></div>
                   <div className="stat-item">
-                    <div className="stat-value">10K+</div>
-                    <div className="stat-label">Interviews Conducted</div>
+                    <div className="stat-value">0</div>
+                    <div className="stat-label">Login Required</div>
                   </div>
                   <div className="stat-divider"></div>
                   <div className="stat-item">
-                    <div className="stat-value">50+</div>
-                    <div className="stat-label">Visa Types</div>
+                    <div className="stat-value">1</div>
+                    <div className="stat-label">Shareable Summary</div>
                   </div>
                 </div>
-                <button className="btn btn-cta" onClick={scrollToSelection}>Get Started Now</button>
+                <button className="btn btn-cta" onClick={scrollToSelection}>Start Practice</button>
+                <p className="practice-note">Practice support only. This does not predict or guarantee any visa decision.</p>
               </div>
               
               <div className="selection-container">
@@ -213,19 +172,19 @@ function InterviewPage() {
                     </svg>
                   </div>
                   <h3>What to Expect</h3>
-                  <p>Our AI will ask you realistic questions based on your selected visa type. Answer as you would in an actual interview for the most accurate feedback and guidance.</p>
+                  <p>The coach asks a short sequence of interview-style questions based on your selected visa type. Answer as you would at the appointment so the feedback can focus on clarity, consistency, and preparedness.</p>
                   <ul className="info-features">
                     <li>
                       <span className="feature-icon">✓</span>
-                      <span>Country-specific questions</span>
+                      <span>Country and visa-type prompts</span>
                     </li>
                     <li>
                       <span className="feature-icon">✓</span>
-                      <span>Real interview scenarios</span>
+                      <span>Concise answer feedback</span>
                     </li>
                     <li>
                       <span className="feature-icon">✓</span>
-                      <span>Diplomatic officer simulation</span>
+                      <span>End-of-session review</span>
                     </li>
                   </ul>
                 </div>
@@ -238,67 +197,62 @@ function InterviewPage() {
                     </svg>
                   </div>
                   <h3>How It Works</h3>
-                  <p>You'll face 10-15 questions typical for your visa type. After each response, you'll receive instant AI feedback to help improve your answers.</p>
+                  <p>You will answer five questions. After each response, you get practical feedback, then the app creates a summary you can save locally or copy.</p>
                   <ul className="info-features">
                     <li>
                       <span className="feature-icon">✓</span>
-                      <span>Personalized feedback</span>
+                      <span>No account needed for the first practice session</span>
                     </li>
                     <li>
                       <span className="feature-icon">✓</span>
-                      <span>Confidence assessment</span>
+                      <span>Local fallback feedback for demos</span>
                     </li>
                     <li>
-                      <span className="feature-icon premium-feature">
-                        {userPlan === 'free' ? '⭐' : '✓'}
-                      </span>
-                      <span>
-                        Response improvement suggestions
-                        {userPlan === 'free' && <span className="premium-tag">Premium</span>}
-                      </span>
+                      <span className="feature-icon">✓</span>
+                      <span>Expandable later for job and founder interviews</span>
                     </li>
                   </ul>
                 </div>
               </div>
               
               <div className="testimonials-section">
-                <h3 className="testimonials-title">Success Stories</h3>
+                <h3 className="testimonials-title">MVP Focus</h3>
                 <div className="testimonials-container">
                   <div className="testimonial-card">
                     <div className="testimonial-content">
-                      <p>"After practicing with VisaCoach, I felt so much more confident in my actual interview. I got my student visa approved on the first try!"</p>
+                      <p>Immediate value: users should be able to open the app, select a visa path, answer one question, and learn something useful in the first minute.</p>
                     </div>
                     <div className="testimonial-author">
-                      <div className="author-avatar">MS</div>
+                      <div className="author-avatar">01</div>
                       <div className="author-info">
-                        <div className="author-name">Maria S.</div>
-                        <div className="author-detail">F1 Student Visa, USA</div>
+                        <div className="author-name">Fast Start</div>
+                        <div className="author-detail">No onboarding wall</div>
                       </div>
                     </div>
                   </div>
                   
                   <div className="testimonial-card">
                     <div className="testimonial-content">
-                      <p>"I was nervous about my business visa interview, but the practice questions here were almost exactly what the officer asked me. Definitely worth it!"</p>
+                      <p>Honest boundaries: the app helps applicants practice communication. It does not offer legal advice or promise outcomes.</p>
                     </div>
                     <div className="testimonial-author">
-                      <div className="author-avatar">RK</div>
+                      <div className="author-avatar">02</div>
                       <div className="author-info">
-                        <div className="author-name">Rajiv K.</div>
-                        <div className="author-detail">B1 Business Visa, UK</div>
+                        <div className="author-name">Safe Claims</div>
+                        <div className="author-detail">Practice, not prediction</div>
                       </div>
                     </div>
                   </div>
                   
                   <div className="testimonial-card">
                     <div className="testimonial-content">
-                      <p>"The feedback on my answers helped me refine my responses and avoid common mistakes. Highly recommend for anyone preparing for a visa interview."</p>
+                      <p>Reusable foundation: the same interview engine can later support job, school, investor, or immigration-style practice modes.</p>
                     </div>
                     <div className="testimonial-author">
-                      <div className="author-avatar">JP</div>
+                      <div className="author-avatar">03</div>
                       <div className="author-info">
-                        <div className="author-name">Julia P.</div>
-                        <div className="author-detail">Working Holiday Visa, Australia</div>
+                        <div className="author-name">Expandable Core</div>
+                        <div className="author-detail">Visa first, general later</div>
                       </div>
                     </div>
                   </div>
@@ -310,7 +264,6 @@ function InterviewPage() {
               selectedCountry={selectedCountry}
               selectedVisaType={selectedVisaType}
               onGoBack={handleGoBack}
-              userPlan={userPlan}
             />
           )}
         </div>
@@ -329,38 +282,10 @@ function InterviewPage() {
               <a href="/terms">Terms of Service</a>
               <a href="/contact">Contact Us</a>
             </div>
-            <div className="footer-social">
-              <a href="https://twitter.com/visacoach" aria-label="Twitter">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path>
-                </svg>
-              </a>
-              <a href="https://facebook.com/visacoach" aria-label="Facebook">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
-                </svg>
-              </a>
-              <a href="https://instagram.com/visacoach" aria-label="Instagram">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-                </svg>
-              </a>
-            </div>
           </div>
-          <p className="copyright">© 2025 VisaCoach. All information is simulated for practice purposes only.</p>
+          <p className="copyright">VisaCoach is a practice tool. It is not legal advice and does not guarantee an application outcome.</p>
         </div>
       </footer>
-
-      {userPlan === 'free' && (
-        <div className="floating-upgrade">
-          <button className="upgrade-button" onClick={handleUpgrade}>
-            <span className="upgrade-icon">⭐</span>
-            <span>Upgrade to Premium</span>
-          </button>
-        </div>
-      )}
     </div>
   );
 }

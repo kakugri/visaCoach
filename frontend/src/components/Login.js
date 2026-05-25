@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { UserContext } from '../App';
 import GoogleAuth from './GoogleAuth';
 import logoSymbol from '../assets/images/logo-symbol.svg';
+import { API_BASE_URL } from '../services/apiConfig';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -10,13 +11,19 @@ const Login = () => {
     const [error, setError] = useState('');
     const { handleLoginSuccess } = useContext(UserContext);
     const navigate = useNavigate();
+    const hasGoogleAuth = Boolean(process.env.REACT_APP_GOOGLE_CLIENT_ID);
+
+    const finishAuth = async (user, token) => {
+        const migration = await handleLoginSuccess(user, token);
+        navigate(migration?.status === 'migrated' ? '/history' : '/interview');
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
 
         try {
-            const response = await fetch('http://localhost:5000/api/auth/login', {
+            const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -26,10 +33,7 @@ const Login = () => {
 
             if (response.ok) {
                 const data = await response.json();
-                // IMPORTANT: This is where we save the token
-                localStorage.setItem('token', data.token);
-                handleLoginSuccess(data.user, data.token);
-                navigate('/interview');
+                await finishAuth(data.user, data.token);
             } else {
                 const errorData = await response.json();
                 setError(errorData.error || 'Login failed');
@@ -52,17 +56,22 @@ const Login = () => {
                     <p>Sign in to continue your visa preparation</p>
                 </div>
                 
-                <div className="social-auth">
-                    <GoogleAuth 
-                        onLoginSuccess={handleLoginSuccess}
-                        buttonText="Sign in with Google"
-                        className="btn btn-google"
-                    />
-                </div>
-                
-                <div className="auth-divider">
-                    <span>or sign in with email</span>
-                </div>
+                {hasGoogleAuth && (
+                    <>
+                        <div className="social-auth">
+                            <GoogleAuth 
+                                onLoginSuccess={finishAuth}
+                                onLoginError={setError}
+                                buttonText="Sign in with Google"
+                                className="btn btn-google"
+                            />
+                        </div>
+                        
+                        <div className="auth-divider">
+                            <span>or sign in with email</span>
+                        </div>
+                    </>
+                )}
                 
                 <form onSubmit={handleSubmit} className="auth-form">
                     <div className="form-group">
@@ -94,7 +103,7 @@ const Login = () => {
                             <input type="checkbox" id="remember" />
                             <label htmlFor="remember">Remember me</label>
                         </div>
-                        <Link to="/forgot-password" className="forgot-password">Forgot password?</Link>
+                        <Link to="/" className="forgot-password">Practice without an account</Link>
                     </div>
                     
                     <button type="submit" className="btn btn-primary btn-block">Sign In</button>

@@ -117,6 +117,7 @@ function CountrySelect({ onSelectCountry, onSelectVisaType, selectedCountry }) {
       setAvailableVisaTypes([]);
     }
     setVisaTypeSelection(''); // Reset visa type when country changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countrySelection]);
 
   const handleCountryChange = (country) => {

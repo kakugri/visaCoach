@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { UserContext } from '../App';
 import GoogleAuth from './GoogleAuth';
 import logoSymbol from '../assets/images/logo-symbol.svg';
+import { API_BASE_URL } from '../services/apiConfig';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -12,6 +13,12 @@ const Register = () => {
   const [error, setError] = useState('');
   const { handleLoginSuccess } = useContext(UserContext);
   const navigate = useNavigate();
+  const hasGoogleAuth = Boolean(process.env.REACT_APP_GOOGLE_CLIENT_ID);
+
+  const finishAuth = async (user, token) => {
+    const migration = await handleLoginSuccess(user, token);
+    navigate(migration?.status === 'migrated' ? '/history' : '/interview');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,7 +31,7 @@ const Register = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/register', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -34,8 +41,7 @@ const Register = () => {
 
       if (response.ok) {
         const data = await response.json();
-        handleLoginSuccess(data.user, data.token);
-        navigate('/interview');
+        await finishAuth(data.user, data.token);
       } else {
         const errorData = await response.json();
         setError(errorData.error || 'Registration failed');
@@ -58,17 +64,22 @@ const Register = () => {
           <p>Get started with VisaCoach to prepare for your visa interview</p>
         </div>
         
-        <div className="social-auth">
-          <GoogleAuth 
-            onLoginSuccess={handleLoginSuccess}
-            buttonText="Sign up with Google"
-            className="btn btn-google"
-          />
-        </div>
-        
-        <div className="auth-divider">
-          <span>or sign up with email</span>
-        </div>
+        {hasGoogleAuth && (
+          <>
+            <div className="social-auth">
+              <GoogleAuth 
+                onLoginSuccess={finishAuth}
+                onLoginError={setError}
+                buttonText="Sign up with Google"
+                className="btn btn-google"
+              />
+            </div>
+            
+            <div className="auth-divider">
+              <span>or sign up with email</span>
+            </div>
+          </>
+        )}
         
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
