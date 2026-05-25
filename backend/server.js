@@ -92,6 +92,14 @@ app.get('/api/profile', authenticate, async (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/interview', interviewRoutes);
 
+app.get(['/live', '/api/live'], (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'visacoach-backend',
+    uptimeSeconds: Math.round(process.uptime()),
+  });
+});
+
 app.get(['/health', '/api/health'], (req, res) => {
   const payload = getHealthPayload({ mongoose, config, startedAt });
   res.status(payload.status === 'ok' ? 200 : 503).json(payload);

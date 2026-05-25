@@ -108,9 +108,12 @@ Check status:
 docker ps --filter name=visacoach
 docker logs --tail=100 visacoach-backend
 curl -I https://visa.yourdomain.com/
+curl https://visa.yourdomain.com/api/live
 curl https://visa.yourdomain.com/health
 curl https://visa.yourdomain.com/api/health
 ```
+
+`/api/live` should return `200` whenever the backend process is running. `/api/health` can return `503` with `status: "degraded"` if MongoDB is unreachable.
 
 If `/api/health` returns the React HTML instead of JSON, Traefik is sending API paths to the frontend. Re-copy the latest `compose.yaml`, restart the VisaCoach containers, and inspect the backend router labels:
 
