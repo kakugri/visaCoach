@@ -395,6 +395,58 @@ const mockRegistrationWithoutMigration = async (page) => {
   return saveHistoryRequests;
 };
 
+const mockEmailLogin = async (page) => {
+  const profileRequests = [];
+
+  await page.route('**/api/auth/login', async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        token: 'login-token',
+        user: {
+          id: 'user-login',
+          name: 'Login User',
+          email: 'login@example.com',
+        },
+      }),
+    });
+  });
+
+  await page.route('**/api/auth/profile', async (route) => {
+    profileRequests.push(route.request().headers().authorization || '');
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        name: 'Login User',
+        email: 'login@example.com',
+        createdAt: '2026-05-25T13:00:00.000Z',
+        lastLogin: '2026-05-25T13:05:00.000Z',
+        practiceProfile: {
+          destinationCountry: 'US',
+          visaType: 'F1',
+          sessionContext: {
+            homeCountry: 'Ghana',
+            institutionOrHost: 'Login University',
+            programOrPurpose: 'MS Information Security',
+          },
+          confidence: { before: 6 },
+          concerns: ['documentation'],
+          feedbackLevel: 'detailed',
+        },
+      }),
+    });
+  });
+
+  await page.route('**/api/interview/history', async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([]),
+    });
+  });
+
+  return profileRequests;
+};
+
 const chooseF1Path = async (page) => {
   await page.getByText('United States', { exact: true }).click();
   await expect(page.locator('.visa-type-container.expanded')).toBeVisible();
@@ -709,6 +761,35 @@ test('guides new registrations into first practice setup', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Prepare for Your Interview' })).toBeVisible({ timeout: 6_000 });
   await expect(page.getByText('Destination: US')).toBeVisible();
   await expect(page.getByText('Visa type: F1')).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
+test('signs in with email and refreshes the profile with saved auth', async ({ page }) => {
+  const profileRequests = await mockEmailLogin(page);
+
+  await page.goto('/login');
+  await page.getByLabel('Email').fill('login@example.com');
+  await page.getByLabel('Password').fill('correct-password');
+  await page.getByRole('button', { name: 'Sign In' }).click();
+
+  await expect(page).toHaveURL(/\/interview$/);
+  const storedAuth = await page.evaluate(() => ({
+    token: localStorage.getItem('token'),
+    user: JSON.parse(localStorage.getItem('user')),
+  }));
+  expect(storedAuth.token).toBe('login-token');
+  expect(storedAuth.user.name).toBe('Login User');
+
+  await page.goto('/profile');
+  await expect(page.getByRole('heading', { name: 'Login User' })).toBeVisible();
+  await expect(page.getByLabel('Home country or current residence')).toHaveValue('Ghana');
+  await expect(page.getByLabel('School, employer, host, or program')).toHaveValue('Login University');
+
+  await page.reload();
+  await expect(page).toHaveURL(/\/profile$/);
+  await expect(page.getByRole('heading', { name: 'Login User' })).toBeVisible();
+  expect(profileRequests.every((header) => header === 'Bearer login-token')).toBe(true);
+  expect(profileRequests.length).toBeGreaterThanOrEqual(2);
   await expectNoHorizontalOverflow(page);
 });
 

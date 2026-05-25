@@ -131,7 +131,7 @@ Exit criteria:
 
 ## Milestone 5: UI And Launch Polish
 
-Status: in progress. Legacy pages/claims removed, info pages added, local analytics added, backend rate limiting added, account navigation polished, prep setup compacted, account export/delete hardened, mobile CSS pass started, and Playwright desktop/mobile checks now cover landing, prep, full session completion, summary copy, saved-session search/filter/delete, practice-again from history, account export/delete, dropdown behavior, and local-session migration after registration.
+Status: in progress. Legacy pages/claims removed, info pages added, local analytics added, backend rate limiting added, account navigation polished, prep setup compacted, account export/delete hardened, mobile CSS pass started, and Playwright desktop/mobile checks now cover landing, prep, full session completion, summary copy, saved-session search/filter/delete, practice-again from history, account export/delete, dropdown behavior, email login/profile refresh, and local-session migration after registration.
 
 Goal: make the app feel credible enough to share publicly.
 
@@ -263,4 +263,4 @@ Milestones 1 and 2 are implemented in the core no-login flow. Milestone 3 is now
 Immediate next build priorities:
 
 - Add broader frontend tests around account prompts and auth redirects.
-- Expand Playwright checks to cover live authenticated login and profile refresh behavior.
+- Review whether static prep tips should remain curated or become model-assisted.
