@@ -62,6 +62,8 @@ Qualitative feedback:
 - Did users know what to do after the summary?
 - Did anyone ask for job, school, or founder interview modes unprompted?
 
+Use [BETA_TESTING_GUIDE.md](./BETA_TESTING_GUIDE.md) when recruiting early testers so feedback is consistent.
+
 ## Decision Gates
 
 Deepen visa coaching if:
