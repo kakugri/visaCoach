@@ -23,6 +23,127 @@ const getSessionDateValue = (session) => {
   return Number.isNaN(date.getTime()) ? 0 : date.getTime();
 };
 
+const CONTEXT_FIELD_LABELS = {
+  homeCountry: 'Home country or current residence',
+  institutionOrHost: 'School, employer, host, or program',
+  programOrPurpose: 'Program, role, or trip purpose',
+  fundingSource: 'Funding source',
+  returnPlan: 'Return plan or home ties',
+  notes: 'Application notes',
+};
+
+const CONCERN_LABELS = {
+  answering: 'Answering',
+  documentation: 'Documents',
+  english: 'English clarity',
+  nervousness: 'Nervousness',
+};
+
+const COUNTRY_OPTIONS = [
+  { value: 'US', label: 'United States' },
+  { value: 'CA', label: 'Canada' },
+  { value: 'UK', label: 'United Kingdom' },
+  { value: 'AU', label: 'Australia' },
+  { value: 'NZ', label: 'New Zealand' },
+  { value: 'DE', label: 'Germany' },
+  { value: 'FR', label: 'France' },
+  { value: 'JP', label: 'Japan' },
+];
+
+const VISA_OPTIONS = {
+  US: [
+    { value: 'F1', label: 'F1 Student Visa' },
+    { value: 'B1/B2', label: 'B1/B2 Tourist/Business Visa' },
+    { value: 'H1B', label: 'H1B Work Visa' },
+    { value: 'O1', label: 'O1 Extraordinary Ability Visa' },
+    { value: 'J1', label: 'J1 Exchange Visitor Visa' },
+  ],
+  CA: [
+    { value: 'student', label: 'Student Visa' },
+    { value: 'work', label: 'Work Permit' },
+    { value: 'visitor', label: 'Visitor Visa' },
+    { value: 'business', label: 'Business Visa' },
+    { value: 'express', label: 'Express Entry' },
+  ],
+  UK: [
+    { value: 'student', label: 'Student Visa' },
+    { value: 'skilled', label: 'Skilled Worker Visa' },
+    { value: 'visitor', label: 'Standard Visitor Visa' },
+    { value: 'startup', label: 'Start-up Visa' },
+    { value: 'family', label: 'Family Visa' },
+  ],
+  AU: [
+    { value: 'student', label: 'Student Visa (Subclass 500)' },
+    { value: 'work', label: 'Temporary Skill Shortage Visa' },
+    { value: 'visitor', label: 'Visitor Visa' },
+    { value: 'working-holiday', label: 'Working Holiday Visa' },
+  ],
+  NZ: [
+    { value: 'student', label: 'Student Visa' },
+    { value: 'work', label: 'Work Visa' },
+    { value: 'visitor', label: 'Visitor Visa' },
+  ],
+  DE: [
+    { value: 'student', label: 'Student Visa' },
+    { value: 'work', label: 'Work Visa' },
+    { value: 'jobseeker', label: 'Job Seeker Visa' },
+  ],
+  FR: [
+    { value: 'student', label: 'Student Visa' },
+    { value: 'work', label: 'Work Visa' },
+    { value: 'visitor', label: 'Visitor Visa' },
+  ],
+  JP: [
+    { value: 'student', label: 'Student Visa' },
+    { value: 'work', label: 'Work Visa' },
+    { value: 'tourist', label: 'Tourist Visa' },
+  ],
+};
+
+const DEFAULT_PRACTICE_PROFILE = {
+  destinationCountry: 'US',
+  visaType: 'F1',
+  sessionContext: {
+    homeCountry: '',
+    institutionOrHost: '',
+    programOrPurpose: '',
+    fundingSource: '',
+    returnPlan: '',
+    notes: '',
+  },
+  confidence: {
+    before: 5,
+  },
+  concerns: [],
+  feedbackLevel: 'detailed',
+};
+
+const getVisaOptions = (country) => VISA_OPTIONS[country] || VISA_OPTIONS.US;
+
+const buildPracticeProfileState = (account = {}) => {
+  const savedProfile = account.practiceProfile || {};
+  const destinationCountry = savedProfile.destinationCountry || 'US';
+  const visaOptions = getVisaOptions(destinationCountry);
+  const savedVisaType = savedProfile.visaType || account.visaType || visaOptions[0]?.value || 'F1';
+
+  return {
+    ...DEFAULT_PRACTICE_PROFILE,
+    ...savedProfile,
+    destinationCountry,
+    visaType: visaOptions.some((option) => option.value === savedVisaType) ? savedVisaType : visaOptions[0]?.value || savedVisaType,
+    sessionContext: {
+      ...DEFAULT_PRACTICE_PROFILE.sessionContext,
+      ...(savedProfile.sessionContext || {}),
+      homeCountry: savedProfile.sessionContext?.homeCountry || account.countryOfOrigin || '',
+    },
+    confidence: {
+      before: savedProfile.confidence?.before || 5,
+    },
+    concerns: Array.isArray(savedProfile.concerns) ? savedProfile.concerns : [],
+    feedbackLevel: savedProfile.feedbackLevel || 'detailed',
+  };
+};
+
 const sessionMatchesSearch = (session, searchTerm) => {
   if (!searchTerm) return true;
   const questions = getSessionQuestions(session);
@@ -82,10 +203,18 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
   const [countryFilter, setCountryFilter] = useState('all');
   const [visaFilter, setVisaFilter] = useState('all');
   const [sessionSort, setSessionSort] = useState('newest');
+  const [practiceProfile, setPracticeProfile] = useState(() => buildPracticeProfileState(user || {}));
+  const [isSavingPracticeProfile, setIsSavingPracticeProfile] = useState(false);
 
   useEffect(() => {
     setActiveTab(initialTab);
   }, [initialTab]);
+
+  useEffect(() => {
+    if (userData || user) {
+      setPracticeProfile(buildPracticeProfileState(userData || user));
+    }
+  }, [userData, user]);
 
   useEffect(() => {
     const fetchAccount = async () => {
@@ -234,6 +363,82 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
     navigate('/interview');
   };
 
+  const handlePracticeProfileCountryChange = (destinationCountry) => {
+    const visaOptions = getVisaOptions(destinationCountry);
+    setPracticeProfile((currentProfile) => ({
+      ...currentProfile,
+      destinationCountry,
+      visaType: visaOptions[0]?.value || currentProfile.visaType,
+    }));
+  };
+
+  const handlePracticeProfileContextChange = (field, value) => {
+    setPracticeProfile((currentProfile) => ({
+      ...currentProfile,
+      sessionContext: {
+        ...currentProfile.sessionContext,
+        [field]: value,
+      },
+    }));
+  };
+
+  const handlePracticeProfileConcernToggle = (concern) => {
+    setPracticeProfile((currentProfile) => ({
+      ...currentProfile,
+      concerns: currentProfile.concerns.includes(concern)
+        ? currentProfile.concerns.filter((item) => item !== concern)
+        : [...currentProfile.concerns, concern],
+    }));
+  };
+
+  const handleSavePracticeProfile = async () => {
+    setIsSavingPracticeProfile(true);
+    setStatusMessage('');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ practiceProfile }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Save failed');
+      }
+
+      const data = await response.json();
+      setPracticeProfile(buildPracticeProfileState({ practiceProfile: data.practiceProfile }));
+      setUserData((currentData) => ({
+        ...(currentData || user || {}),
+        practiceProfile: data.practiceProfile,
+        countryOfOrigin: data.practiceProfile?.sessionContext?.homeCountry || currentData?.countryOfOrigin,
+        visaType: data.practiceProfile?.visaType || currentData?.visaType,
+      }));
+      setStatusMessage('Practice profile saved.');
+    } catch (error) {
+      console.error('Unable to save practice profile:', error);
+      setStatusMessage('Practice profile could not be saved.');
+    } finally {
+      setIsSavingPracticeProfile(false);
+    }
+  };
+
+  const handleStartProfilePractice = () => {
+    localStorage.setItem('visaCoach:practiceDraft', JSON.stringify({
+      country: practiceProfile.destinationCountry,
+      visaType: practiceProfile.visaType,
+      sessionContext: practiceProfile.sessionContext || {},
+      confidence: practiceProfile.confidence || {},
+      concerns: practiceProfile.concerns || [],
+      feedbackLevel: practiceProfile.feedbackLevel || 'detailed',
+    }));
+    navigate('/interview');
+  };
+
   const handleExportData = async () => {
     const fallbackExportData = {
       exportedAt: new Date().toISOString(),
@@ -314,6 +519,161 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
     }
   };
 
+  const renderPracticeProfile = () => (
+    <div className="practice-profile-card">
+      <div className="section-heading">
+        <div>
+          <h3>Practice Profile</h3>
+          <p className="section-subtitle">Saved defaults for your next interview setup.</p>
+        </div>
+        <button className="btn btn-primary" onClick={handleStartProfilePractice}>Start Practice</button>
+      </div>
+
+      <div className="practice-profile-form">
+        <label>
+          <span>Destination</span>
+          <select
+            value={practiceProfile.destinationCountry}
+            onChange={(event) => handlePracticeProfileCountryChange(event.target.value)}
+          >
+            {COUNTRY_OPTIONS.map((country) => (
+              <option key={country.value} value={country.value}>{country.label}</option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          <span>Visa type</span>
+          <select
+            value={practiceProfile.visaType}
+            onChange={(event) => setPracticeProfile((currentProfile) => ({
+              ...currentProfile,
+              visaType: event.target.value,
+            }))}
+          >
+            {getVisaOptions(practiceProfile.destinationCountry).map((visa) => (
+              <option key={visa.value} value={visa.value}>{visa.label}</option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          <span>{CONTEXT_FIELD_LABELS.homeCountry}</span>
+          <input
+            type="text"
+            value={practiceProfile.sessionContext.homeCountry}
+            onChange={(event) => handlePracticeProfileContextChange('homeCountry', event.target.value)}
+            placeholder="Ghana"
+          />
+        </label>
+
+        <label>
+          <span>{CONTEXT_FIELD_LABELS.institutionOrHost}</span>
+          <input
+            type="text"
+            value={practiceProfile.sessionContext.institutionOrHost}
+            onChange={(event) => handlePracticeProfileContextChange('institutionOrHost', event.target.value)}
+            placeholder="University, employer, host, or program"
+          />
+        </label>
+
+        <label>
+          <span>{CONTEXT_FIELD_LABELS.programOrPurpose}</span>
+          <input
+            type="text"
+            value={practiceProfile.sessionContext.programOrPurpose}
+            onChange={(event) => handlePracticeProfileContextChange('programOrPurpose', event.target.value)}
+            placeholder="MS Computer Science"
+          />
+        </label>
+
+        <label>
+          <span>{CONTEXT_FIELD_LABELS.fundingSource}</span>
+          <input
+            type="text"
+            value={practiceProfile.sessionContext.fundingSource}
+            onChange={(event) => handlePracticeProfileContextChange('fundingSource', event.target.value)}
+            placeholder="Family sponsor, savings, scholarship"
+          />
+        </label>
+
+        <label className="profile-field-wide">
+          <span>{CONTEXT_FIELD_LABELS.returnPlan}</span>
+          <input
+            type="text"
+            value={practiceProfile.sessionContext.returnPlan}
+            onChange={(event) => handlePracticeProfileContextChange('returnPlan', event.target.value)}
+            placeholder="Job, family, business, property, or career plan at home"
+          />
+        </label>
+
+        <label className="profile-field-wide">
+          <span>{CONTEXT_FIELD_LABELS.notes}</span>
+          <textarea
+            value={practiceProfile.sessionContext.notes}
+            onChange={(event) => handlePracticeProfileContextChange('notes', event.target.value)}
+            placeholder="Short SOP, resume, DS-160, or application notes"
+            rows="3"
+          />
+        </label>
+      </div>
+
+      <div className="practice-profile-controls">
+        <label className="profile-confidence">
+          <span>Starting confidence: {practiceProfile.confidence.before}/10</span>
+          <input
+            type="range"
+            min="1"
+            max="10"
+            value={practiceProfile.confidence.before}
+            onChange={(event) => setPracticeProfile((currentProfile) => ({
+              ...currentProfile,
+              confidence: { before: parseInt(event.target.value, 10) },
+            }))}
+          />
+        </label>
+
+        <label>
+          <span>Feedback style</span>
+          <select
+            value={practiceProfile.feedbackLevel}
+            onChange={(event) => setPracticeProfile((currentProfile) => ({
+              ...currentProfile,
+              feedbackLevel: event.target.value,
+            }))}
+          >
+            <option value="brief">Brief</option>
+            <option value="detailed">Detailed</option>
+            <option value="realistic">Realistic</option>
+          </select>
+        </label>
+      </div>
+
+      <div className="profile-concerns">
+        <span>Focus areas</span>
+        <div className="profile-concern-options">
+          {Object.entries(CONCERN_LABELS).map(([value, label]) => (
+            <label key={value}>
+              <input
+                type="checkbox"
+                checked={practiceProfile.concerns.includes(value)}
+                onChange={() => handlePracticeProfileConcernToggle(value)}
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="profile-actions">
+        <button className="btn btn-primary" onClick={handleSavePracticeProfile} disabled={isSavingPracticeProfile}>
+          {isSavingPracticeProfile ? 'Saving...' : 'Save Practice Profile'}
+        </button>
+        <button className="btn btn-outline" onClick={handleStartProfilePractice}>Start Practice</button>
+      </div>
+    </div>
+  );
+
   const renderProfile = () => (
     <section className="profile-info">
       <div className="profile-header">
@@ -361,8 +721,10 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
         </div>
       </div>
 
+      {renderPracticeProfile()}
+
       <div className="profile-actions">
-        <button className="btn btn-primary" onClick={() => navigate('/interview')}>New Practice Session</button>
+        <button className="btn btn-primary" onClick={handleStartProfilePractice}>Start Practice With Profile</button>
         <button className="btn btn-outline" onClick={handleLogout}>Sign Out</button>
       </div>
     </section>
@@ -372,7 +734,7 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
     <section className="interview-history">
       <div className="section-heading">
         <h3>Saved Sessions</h3>
-        <button className="btn btn-primary" onClick={() => navigate('/interview')}>New Practice Session</button>
+        <button className="btn btn-primary" onClick={handleStartProfilePractice}>New Practice Session</button>
       </div>
 
       {sessions.length ? (
@@ -523,7 +885,7 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
           <div className="empty-state">
             <h4>No saved sessions yet</h4>
             <p>Complete a practice session while signed in and it will appear here.</p>
-            <button onClick={() => navigate('/interview')} className="btn btn-primary">
+            <button onClick={handleStartProfilePractice} className="btn btn-primary">
               Start Practice
             </button>
           </div>
@@ -597,7 +959,7 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
         </nav>
 
         <div className="sidebar-actions">
-          <button onClick={() => navigate('/interview')} className="btn btn-primary btn-block">
+          <button onClick={handleStartProfilePractice} className="btn btn-primary btn-block">
             New Practice Session
           </button>
         </div>

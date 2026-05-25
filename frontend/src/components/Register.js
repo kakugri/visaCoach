@@ -17,7 +17,7 @@ const Register = () => {
 
   const finishAuth = async (user, token) => {
     const migration = await handleLoginSuccess(user, token);
-    navigate(migration?.status === 'migrated' ? '/history' : '/interview');
+    navigate(migration?.status === 'migrated' ? '/history' : '/profile');
   };
 
   const handleSubmit = async (e) => {

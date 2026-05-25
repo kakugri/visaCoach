@@ -79,6 +79,21 @@ const mockStructuredFeedback = async (page) => {
 const mockSavedSessions = async (page) => {
   let deleted = false;
   let accountDeleted = false;
+  let savedPracticeProfile = {
+    destinationCountry: 'US',
+    visaType: 'F1',
+    sessionContext: {
+      homeCountry: 'Ghana',
+      institutionOrHost: 'Example University',
+      programOrPurpose: 'MS Computer Science',
+      fundingSource: 'Family sponsor',
+      returnPlan: 'Return home to work in software',
+      notes: '',
+    },
+    confidence: { before: 7 },
+    concerns: ['answering'],
+    feedbackLevel: 'detailed',
+  };
   const sessions = [
     {
       _id: 'session-1',
@@ -126,6 +141,33 @@ const mockSavedSessions = async (page) => {
         email: 'test@example.com',
         createdAt: '2026-05-24T12:00:00.000Z',
         lastLogin: '2026-05-24T12:30:00.000Z',
+        practiceProfile: savedPracticeProfile,
+      }),
+    });
+  });
+
+  await page.route('**/api/auth/profile', async (route) => {
+    if (accountDeleted) {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'User not found' }),
+      });
+      return;
+    }
+
+    if (route.request().method() !== 'PUT') {
+      await route.fallback();
+      return;
+    }
+
+    const payload = route.request().postDataJSON();
+    savedPracticeProfile = payload.practiceProfile;
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        message: 'Profile updated',
+        practiceProfile: savedPracticeProfile,
       }),
     });
   });
@@ -164,6 +206,7 @@ const mockSavedSessions = async (page) => {
           name: 'Test User',
           email: 'test@example.com',
           createdAt: '2026-05-24T12:00:00.000Z',
+          practiceProfile: savedPracticeProfile,
         },
         sessionCount: sessions.length,
         sessions,
@@ -513,6 +556,46 @@ test('opens profile and settings from the account dropdown', async ({ page, cont
   await expect(page).toHaveURL(/\/profile$/);
   await expect(page.getByRole('heading', { name: 'Test User' })).toBeVisible();
   await expect(page.getByText('Member since')).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
+test('saves a practice profile and starts setup with saved defaults', async ({ page }) => {
+  await mockSavedSessions(page);
+  await page.addInitScript(() => {
+    localStorage.setItem('token', 'test-token');
+    localStorage.setItem('user', JSON.stringify({
+      name: 'Test User',
+      email: 'test@example.com',
+    }));
+  });
+
+  await page.goto('/profile');
+  await expect(page.getByRole('heading', { name: 'Practice Profile' })).toBeVisible();
+
+  await page.getByLabel('Destination').selectOption('CA');
+  await page.getByLabel('Visa type').selectOption('student');
+  await page.getByLabel('Home country or current residence').fill('Nigeria');
+  await page.getByLabel('School, employer, host, or program').fill('Toronto Tech College');
+  await page.getByLabel('Program, role, or trip purpose').fill('Graduate diploma in cybersecurity');
+  await page.getByLabel('Funding source').fill('Personal savings and family support');
+  await page.getByLabel('Return plan or home ties').fill('Return to join my employer security team');
+  await page.getByLabel('Feedback style').selectOption('brief');
+  await page.getByLabel('English clarity').check();
+
+  await page.getByRole('button', { name: 'Save Practice Profile' }).click();
+  await expect(page.getByText('Practice profile saved.')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Start Practice' }).first().click();
+  await expect(page).toHaveURL(/\/interview$/);
+  await expect(page.getByRole('heading', { name: 'Prepare for Your Interview' })).toBeVisible({ timeout: 6_000 });
+  await expect(page.getByText('Destination: CA')).toBeVisible();
+  await expect(page.getByText('Visa type: student')).toBeVisible();
+  await expect(page.getByLabel('Home country or current residence')).toHaveValue('Nigeria');
+  await expect(page.getByLabel('School, employer, host, or program')).toHaveValue('Toronto Tech College');
+  await expect(page.getByLabel('Program, role, or trip purpose')).toHaveValue('Graduate diploma in cybersecurity');
+  await expect(page.getByLabel('Funding source')).toHaveValue('Personal savings and family support');
+  await expect(page.getByLabel('Return plan or home ties')).toHaveValue('Return to join my employer security team');
+  await expect(page.getByLabel("Brief (Just tell me if I'm on the right track)")).toBeChecked();
   await expectNoHorizontalOverflow(page);
 });
 

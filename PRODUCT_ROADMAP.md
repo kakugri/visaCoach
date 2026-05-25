@@ -202,7 +202,7 @@ Remaining hardening:
 
 ## Milestone 7: Question Personalization And Profile Onboarding
 
-Status: core complete for question personalization; onboarding polish remains. The product keeps the static question bank as a fallback while using backend-generated personalized question sets when Gemini is available. Saved sessions can now relaunch practice with prior applicant context prefilled.
+Status: core complete for question personalization; onboarding polish in progress. The product keeps the static question bank as a fallback while using backend-generated personalized question sets when Gemini is available. Saved sessions can relaunch practice with prior applicant context prefilled, and logged-in users can save a practice profile before starting a simulation.
 
 Goal: make each practice session feel tailored without making the first-use flow slower or fragile.
 
@@ -223,6 +223,7 @@ Deliverables:
 - Add pre-practice sign-in/create-profile entry points.
 - Save question-set source metadata with account history.
 - Reuse saved profile/session context when starting another practice session.
+- Save account-level practice profile defaults.
 - Review whether static prep tips should also become model-generated or remain curated.
 
 Exit criteria:
@@ -261,7 +262,6 @@ Milestones 1 and 2 are implemented in the core no-login flow. Milestone 3 is now
 
 Immediate next build priorities:
 
-- Add profile-first onboarding fields for applicants who want to create a profile before practice.
-- Reuse saved profile context as the default setup context for new practice sessions.
+- Add a lighter first-run profile prompt after registration so new users are guided into the practice profile.
 - Add frontend tests for summary generation, structured feedback rendering, and account prompts.
 - Expand Playwright checks to cover live authenticated login and profile refresh behavior.

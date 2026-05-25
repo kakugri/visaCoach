@@ -13,6 +13,10 @@ test('buildAccountExport returns safe profile fields and saved sessions', () => 
     __v: 1,
     createdAt: '2026-05-24T00:00:00.000Z',
     lastLogin: '2026-05-25T00:00:00.000Z',
+    practiceProfile: {
+      destinationCountry: 'US',
+      visaType: 'F1',
+    },
     interviewHistory: [
       {
         sessionId: 'session-1',
@@ -27,6 +31,7 @@ test('buildAccountExport returns safe profile fields and saved sessions', () => 
   assert.equal(exportPayload.profile.id, '507f191e810c19729de860aa');
   assert.equal(exportPayload.profile.email, 'export@example.com');
   assert.equal(exportPayload.profile.name, 'Export User');
+  assert.equal(exportPayload.profile.practiceProfile.destinationCountry, 'US');
   assert.equal(exportPayload.profile.password, undefined);
   assert.equal(exportPayload.profile.__v, undefined);
   assert.equal(exportPayload.sessionCount, 1);
@@ -83,6 +88,93 @@ test('exportAuthenticatedAccount rejects missing user ids', async () => {
 
   assert.equal(result.status, 400);
   assert.equal(result.body.error, 'User ID is missing from token');
+});
+
+test('sanitizePracticeProfile trims fields and rejects unknown option values', () => {
+  const sanitized = authRoutes._test.sanitizePracticeProfile({
+    destinationCountry: ' US ',
+    visaType: ' F1 ',
+    sessionContext: {
+      homeCountry: ' Ghana ',
+      institutionOrHost: ' Example University ',
+      programOrPurpose: ' MS Computer Science ',
+      fundingSource: ' Family sponsor ',
+      returnPlan: ' Return home ',
+      notes: ' Application notes ',
+    },
+    confidence: { before: 14 },
+    concerns: ['english', 'unknown', 'english', 'nervousness'],
+    feedbackLevel: 'not-real',
+  });
+
+  assert.equal(sanitized.destinationCountry, 'US');
+  assert.equal(sanitized.visaType, 'F1');
+  assert.equal(sanitized.sessionContext.homeCountry, 'Ghana');
+  assert.equal(sanitized.confidence.before, 10);
+  assert.deepEqual(sanitized.concerns, ['english', 'nervousness']);
+  assert.equal(sanitized.feedbackLevel, 'detailed');
+  assert.ok(sanitized.updatedAt instanceof Date);
+});
+
+test('updateAuthenticatedProfile saves a sanitized practice profile', async () => {
+  const originalFindById = User.findById;
+  const savedUsers = [];
+
+  User.findById = async (userId) => ({
+    _id: userId,
+    email: 'profile@example.com',
+    name: 'Profile User',
+    countryOfOrigin: '',
+    visaType: '',
+    save: async function save() {
+      savedUsers.push({
+        practiceProfile: this.practiceProfile,
+        countryOfOrigin: this.countryOfOrigin,
+        visaType: this.visaType,
+      });
+    },
+  });
+
+  try {
+    const result = await authRoutes._test.updateAuthenticatedProfile('507f191e810c19729de860ac', {
+      practiceProfile: {
+        destinationCountry: 'US',
+        visaType: 'F1',
+        sessionContext: {
+          homeCountry: 'Ghana',
+          institutionOrHost: 'Example University',
+        },
+        confidence: { before: 7 },
+        concerns: ['answering', 'documentation'],
+        feedbackLevel: 'brief',
+      },
+    });
+
+    assert.equal(result.status, 200);
+    assert.equal(result.body.practiceProfile.destinationCountry, 'US');
+    assert.equal(result.body.practiceProfile.sessionContext.homeCountry, 'Ghana');
+    assert.equal(savedUsers[0].countryOfOrigin, 'Ghana');
+    assert.equal(savedUsers[0].visaType, 'F1');
+  } finally {
+    User.findById = originalFindById;
+  }
+});
+
+test('updateAuthenticatedProfile returns 404 when the user is missing', async () => {
+  const originalFindById = User.findById;
+
+  User.findById = async () => null;
+
+  try {
+    const result = await authRoutes._test.updateAuthenticatedProfile('507f191e810c19729de860ad', {
+      practiceProfile: { destinationCountry: 'US', visaType: 'F1' },
+    });
+
+    assert.equal(result.status, 404);
+    assert.equal(result.body.error, 'User not found');
+  } finally {
+    User.findById = originalFindById;
+  }
 });
 
 test('deleteAuthenticatedAccount deletes a user by id', async () => {

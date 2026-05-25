@@ -9,6 +9,47 @@ const { generateToken, verifyToken } = require('../utils/authUtils');
 // Initialize Google OAuth client
 const getGoogleClientId = () => process.env.GOOGLE_CLIENT_ID || process.env.REACT_APP_GOOGLE_CLIENT_ID;
 const client = new OAuth2Client(getGoogleClientId());
+const SESSION_CONTEXT_FIELDS = [
+  'homeCountry',
+  'institutionOrHost',
+  'programOrPurpose',
+  'fundingSource',
+  'returnPlan',
+  'notes',
+];
+const ALLOWED_CONCERNS = new Set(['answering', 'documentation', 'english', 'nervousness']);
+const ALLOWED_FEEDBACK_LEVELS = new Set(['brief', 'detailed', 'realistic']);
+
+const sanitizeText = (value, maxLength = 240) => (
+  typeof value === 'string' ? value.trim().slice(0, maxLength) : ''
+);
+
+const clampConfidence = (value) => {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return 5;
+  return Math.min(10, Math.max(1, Math.round(numericValue)));
+};
+
+const sanitizePracticeProfile = (input = {}) => {
+  const sessionContext = SESSION_CONTEXT_FIELDS.reduce((context, field) => ({
+    ...context,
+    [field]: sanitizeText(input.sessionContext?.[field], field === 'notes' ? 2000 : 240),
+  }), {});
+
+  return {
+    destinationCountry: sanitizeText(input.destinationCountry, 40),
+    visaType: sanitizeText(input.visaType, 40),
+    sessionContext,
+    confidence: {
+      before: clampConfidence(input.confidence?.before),
+    },
+    concerns: Array.isArray(input.concerns)
+      ? [...new Set(input.concerns.filter((concern) => ALLOWED_CONCERNS.has(concern)))]
+      : [],
+    feedbackLevel: ALLOWED_FEEDBACK_LEVELS.has(input.feedbackLevel) ? input.feedbackLevel : 'detailed',
+    updatedAt: new Date(),
+  };
+};
 
 // Verify Google token function
 const verifyGoogleToken = async (token) => {
@@ -192,6 +233,7 @@ const buildAccountExport = (user, exportedAt = new Date().toISOString()) => {
     countryOfOrigin: account.countryOfOrigin,
     visaType: account.visaType,
     interviewDate: account.interviewDate,
+    practiceProfile: account.practiceProfile,
     subscriptionStatus: account.subscriptionStatus,
     lastLogin: account.lastLogin,
     createdAt: account.createdAt,
@@ -230,6 +272,41 @@ const exportAuthenticatedAccount = async (userId) => {
   };
 };
 
+const updateAuthenticatedProfile = async (userId, updates = {}) => {
+  if (!userId) {
+    return {
+      status: 400,
+      body: { error: 'User ID is missing from token' },
+    };
+  }
+
+  const user = await User.findById(userId);
+
+  if (!user) {
+    return {
+      status: 404,
+      body: { error: 'User not found' },
+    };
+  }
+
+  if (updates.practiceProfile) {
+    const practiceProfile = sanitizePracticeProfile(updates.practiceProfile);
+    user.practiceProfile = practiceProfile;
+    user.countryOfOrigin = practiceProfile.sessionContext.homeCountry || user.countryOfOrigin;
+    user.visaType = practiceProfile.visaType || user.visaType;
+  }
+
+  await user.save();
+
+  return {
+    status: 200,
+    body: {
+      message: 'Profile updated',
+      practiceProfile: user.practiceProfile,
+    },
+  };
+};
+
 // GET user profile - with proper authentication
 router.get('/profile', authMiddleware, async (req, res) => {
   try {
@@ -249,6 +326,16 @@ router.get('/profile', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Error fetching user profile:', error);
     res.status(500).json({ error: 'Failed to fetch profile' });
+  }
+});
+
+router.put('/profile', authMiddleware, async (req, res) => {
+  try {
+    const result = await updateAuthenticatedProfile(req.user.userId, req.body);
+    res.status(result.status).json(result.body);
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    res.status(500).json({ error: 'Failed to update profile' });
   }
 });
 
@@ -275,6 +362,8 @@ router.delete('/account', authMiddleware, async (req, res) => {
 router._test = {
   buildAccountExport,
   exportAuthenticatedAccount,
+  sanitizePracticeProfile,
+  updateAuthenticatedProfile,
   deleteAuthenticatedAccount,
 };
 

@@ -15,6 +15,24 @@ const userSchema = new mongoose.Schema({
   countryOfOrigin: { type: String },
   visaType: { type: String },
   interviewDate: { type: Date },
+  practiceProfile: {
+    destinationCountry: { type: String },
+    visaType: { type: String },
+    sessionContext: {
+      homeCountry: { type: String },
+      institutionOrHost: { type: String },
+      programOrPurpose: { type: String },
+      fundingSource: { type: String },
+      returnPlan: { type: String },
+      notes: { type: String },
+    },
+    confidence: {
+      before: { type: Number },
+    },
+    concerns: [{ type: String }],
+    feedbackLevel: { type: String },
+    updatedAt: { type: Date },
+  },
   subscriptionStatus: { type: String, default: 'free' }, // free, basic, pro, premium
   interviewHistory: [{ // Interview history
     sessionId: { type: String },
