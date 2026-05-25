@@ -211,7 +211,6 @@
 /* Selection Screen */
 .selection-screen {
   animation: fadeIn 0.5s ease-out;
-  scroll-margin-top: 5rem;
 }
 
 @keyframes fadeIn {
@@ -371,6 +370,7 @@
   max-width: 900px;
   margin-left: auto;
   margin-right: auto;
+  scroll-margin-top: 6rem;
 }
 
 .section-header {

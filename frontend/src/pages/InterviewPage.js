@@ -79,7 +79,13 @@ function InterviewPage() {
 
   const scrollToSelection = () => {
     if (selectionRef.current) {
-      selectionRef.current.scrollIntoView({ behavior: 'smooth' });
+      const headerHeight = document.querySelector('.interview-header')?.offsetHeight || 0;
+      const selectionTop = selectionRef.current.getBoundingClientRect().top + window.scrollY;
+
+      window.scrollTo({
+        top: Math.max(selectionTop - headerHeight - 20, 0),
+        behavior: 'smooth',
+      });
     }
   };
 
@@ -154,7 +160,7 @@ function InterviewPage() {
               <p className="loading-country-info">Preparing {selectedVisaType} visa interview for {selectedCountry}...</p>
             </div>
           ) : !selectedCountry || !selectedVisaType ? (
-            <div className="selection-screen" ref={selectionRef}>
+            <div className="selection-screen">
               <div className="hero-section">
                 <h1 className="page-title">Practice a <span className="gradient-text">Visa Interview</span> in Five Minutes</h1>
                 <p className="page-subtitle">Choose a destination and visa type, answer a short set of realistic questions, then review focused feedback you can use before the real appointment.</p>
@@ -185,7 +191,7 @@ function InterviewPage() {
                 <p className="practice-note">Practice support only. This does not predict or guarantee any visa decision.</p>
               </div>
               
-              <div className="selection-container">
+              <div className="selection-container" ref={selectionRef} id="visa-path">
                 <div className="section-header">
                   <span className="section-number">1</span>
                   <h2 className="section-title">Select your destination & visa type</h2>

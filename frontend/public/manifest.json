@@ -1,0 +1,17 @@
+{
+  "short_name": "VisaCoach",
+  "name": "VisaCoach - Visa Interview Practice",
+  "description": "Short visa interview practice with focused feedback and copyable summaries.",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "64x64 192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#2563eb",
+  "background_color": "#f8fafc"
+}

@@ -280,6 +280,10 @@ test('renders the visa practice landing screen', async ({ page }) => {
   await expect(page.getByRole('heading', { name: /Practice a Visa Interview/i })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Choose Visa Path' })).toBeVisible();
   await expect(page.getByText('Practice support only')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Choose Visa Path' }).click();
+  await page.waitForFunction(() => window.scrollY > 200);
+  await expect(page.getByRole('heading', { name: 'Select your destination & visa type' })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 
