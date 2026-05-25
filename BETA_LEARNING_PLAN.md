@@ -77,6 +77,7 @@ Start M8 mode planning if:
 - Multiple users explicitly ask for non-visa modes.
 - The visa workflow feels stable and self-explanatory.
 - The core session engine no longer needs major changes.
+- We can define a job-interview pilot that has a clear edge against Big Interview-style training plus mock interview products.
 
 Do not expand yet if:
 
@@ -96,7 +97,7 @@ Visa-depth candidates:
 
 Expansion candidates:
 
-- Job interview mode.
+- Job interview mode, with Big Interview as the benchmark for prep depth, tailored practice, feedback, and progress tracking.
 - School/admissions interview mode.
 - Founder or pitch practice mode.
 

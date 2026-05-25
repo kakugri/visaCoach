@@ -251,6 +251,8 @@ Status: intentionally deferred.
 
 Goal: expand only after the visa workflow proves useful.
 
+Benchmark: [Big Interview](https://www.biginterview.com/) is the strongest job-interview reference found so far. The useful lesson is not just "AI asks questions"; it is a full loop of learning, practice, feedback, tailored questions, and visible progress. If VisaCoach expands into job interviews, it should compete through a focused workflow and better personalization, not by becoming a generic chatbot.
+
 Deliverables:
 
 - Extract a generic interview-mode framework:
@@ -261,6 +263,12 @@ Deliverables:
 - Add mode-specific intake fields.
 - Add mode-specific question banks and rubrics.
 - Keep each mode small and complete before adding another.
+- For job interview mode, benchmark against Big Interview-style depth:
+  - structured preparation before the mock interview
+  - realistic role/company-specific question sets
+  - answer builder or rewrite loop
+  - rubric-based feedback
+  - progress history across sessions
 
 Exit criteria:
 
@@ -338,7 +346,11 @@ Purpose: learn from real usage before adding scope.
 Purpose: avoid premature sprawl while preparing the architecture for later interview modes.
 
 - M8.1 Mode architecture sketch: deferred.
+  - Extract the current flow into `mode -> intake -> question set -> rubric -> summary -> saved history`.
+  - Keep visa as the reference implementation.
 - M8.2 Job interview pilot: deferred until visa beta usage validates the core loop.
+  - Big Interview is the main benchmark for depth and polish.
+  - A job pilot should include training/prep, tailored questions, feedback, answer revision, and progress tracking.
 - M8.3 School/founder/pitch modes: deferred.
 
 Immediate next build priorities:
