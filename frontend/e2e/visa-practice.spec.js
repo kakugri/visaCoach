@@ -764,6 +764,31 @@ test('guides new registrations into first practice setup', async ({ page }) => {
   await expectNoHorizontalOverflow(page);
 });
 
+test('persists first-run profile prompt dismissal', async ({ page }) => {
+  await mockRegistrationWithoutMigration(page);
+  await page.addInitScript(() => {
+    localStorage.setItem('token', 'first-run-token');
+    localStorage.setItem('user', JSON.stringify({
+      name: 'First Run User',
+      email: 'first-run@example.com',
+    }));
+  });
+
+  await page.goto('/profile?setup=1');
+  await expect(page.getByRole('heading', { name: 'Set your practice defaults' })).toBeVisible();
+  await page.getByRole('button', { name: 'Dismiss' }).click();
+  await expect(page).toHaveURL(/\/profile$/);
+  await expect(page.getByRole('heading', { name: 'Set your practice defaults' })).toHaveCount(0);
+
+  const dismissed = await page.evaluate(() => localStorage.getItem('visaCoach:firstRunProfilePromptDismissed'));
+  expect(dismissed).toBe('true');
+
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Practice Profile' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Set your practice defaults' })).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
+});
+
 test('signs in with email and refreshes the profile with saved auth', async ({ page }) => {
   const profileRequests = await mockEmailLogin(page);
 
@@ -790,6 +815,23 @@ test('signs in with email and refreshes the profile with saved auth', async ({ p
   await expect(page.getByRole('heading', { name: 'Login User' })).toBeVisible();
   expect(profileRequests.every((header) => header === 'Bearer login-token')).toBe(true);
   expect(profileRequests.length).toBeGreaterThanOrEqual(2);
+  await expectNoHorizontalOverflow(page);
+});
+
+test('redirects already signed-in users away from auth pages', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('token', 'existing-token');
+    localStorage.setItem('user', JSON.stringify({
+      name: 'Existing User',
+      email: 'existing@example.com',
+    }));
+  });
+
+  await page.goto('/login');
+  await expect(page).toHaveURL(/\/interview$/);
+
+  await page.goto('/register');
+  await expect(page).toHaveURL(/\/profile$/);
   await expectNoHorizontalOverflow(page);
 });
 
