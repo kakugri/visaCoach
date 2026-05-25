@@ -104,6 +104,6 @@ Expansion candidates:
 - School/admissions interview mode.
 - Founder or pitch practice mode.
 
-The default next bet is deeper visa coaching unless beta users pull strongly toward another mode.
+The default next bet is the V1 answer revision loop, followed by progress visibility and then visa fact consistency. M8/job interviews remain deferred unless beta users pull strongly toward another mode.
 
 Use [NEXT_BUILD_CANDIDATES.md](./NEXT_BUILD_CANDIDATES.md) to pick the first post-beta build slice after reviewing tester evidence.

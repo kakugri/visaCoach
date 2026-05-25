@@ -278,7 +278,7 @@ Exit criteria:
 
 ## Current Priority
 
-Milestones 1 through 7 are complete for the current public beta scope. Milestone 8 remains intentionally deferred until beta usage shows whether to deepen visa coaching or expand into another interview mode. The active workstream is beta learning and operational review.
+Milestones 1 through 7 are complete for the current public beta scope. The agreed next product direction is to deepen visa coaching before starting M8. Milestone 8 remains intentionally deferred unless beta users strongly pull toward another interview mode. The active workstreams are beta learning and the post-beta visa-depth roadmap.
 
 ## Active Sub-Roadmaps
 
@@ -341,6 +341,29 @@ Purpose: learn from real usage before adding scope.
 - BL.4 Decision gate: pending.
   - Choose between deeper visa coaching and M8 mode-architecture planning.
 
+### Visa Depth Roadmap
+
+Purpose: make VisaCoach meaningfully better for visa users before broadening into generic interviews.
+
+- V1 Answer Revision Loop: next.
+  - Let users revise one answer after feedback.
+  - Compare original vs revised answer.
+  - Save both versions in the session summary/history.
+  - Keep the loop optional so first-use practice remains fast.
+- V2 Progress Dashboard: next after V1.
+  - Show confidence trends across saved sessions.
+  - Show recurring improvement areas.
+  - Show question-source and feedback-source history.
+  - Avoid overemphasizing fake precision in readiness scores.
+- V3 Visa Fact Consistency Prep: next after V1/V2.
+  - Add structured fact sheet fields, not document uploads.
+  - Use facts to flag answer consistency gaps.
+  - Keep legal/outcome boundaries visible.
+- V4 Stricter Officer Mode: later.
+  - Make realistic mode more like a real officer exchange.
+  - Use short follow-ups and less coaching during the interview.
+  - Provide coaching after the exchange.
+
 ### M8.x: Expansion Beyond Visa Interviews
 
 Purpose: avoid premature sprawl while preparing the architecture for later interview modes.
@@ -356,6 +379,7 @@ Purpose: avoid premature sprawl while preparing the architecture for later inter
 Immediate next build priorities:
 
 - Follow `BETA_LEARNING_PLAN.md` for the first public beta review cycle.
-- Watch beta usage for account/session errors, confusing setup steps, and whether personalized questions outperform the static question bank.
-- Use early feedback to decide whether to deepen visa practice or begin M8 mode-architecture planning.
+- Start V1 Answer Revision Loop.
+- Use feedback to tune whether V2 Progress Dashboard or V3 Visa Fact Consistency Prep follows next.
+- Keep M8 deferred unless repeated user feedback asks for non-visa modes.
 - Choose one concrete next build from `NEXT_BUILD_CANDIDATES.md` after the first tester batch.

@@ -2,6 +2,14 @@
 
 Use this after the first beta feedback review. Do not build all of these at once.
 
+Current recommendation:
+
+```text
+A1 Answer Revision Loop -> D1 Progress Dashboard -> C1 Visa Fact Consistency Prep
+```
+
+M8/job interviews remain deferred unless users repeatedly ask for non-visa modes.
+
 ## Candidate A: Deeper Visa Coaching
 
 Best if testers complete sessions and ask for more rigorous visa-specific help.
@@ -99,7 +107,7 @@ profile facts -> answer feedback checks facts -> end summary lists consistency g
 
 ## Candidate D: Progress Dashboard
 
-Best if users repeat sessions and want to see improvement.
+Recommended after Candidate A. It becomes more useful once sessions include original/revised answers and richer improvement patterns.
 
 Scope:
 
@@ -128,6 +136,7 @@ profile page -> progress panel -> confidence trend + recurring focus areas
 
 Pick one candidate after the first beta review:
 
-- Choose A or C if visa users want more depth.
+- Default to A first.
+- Choose D second if users repeat sessions or save revised answers.
+- Choose C after A/D if users worry about document/fact consistency.
 - Choose B only if non-visa demand is repeated and specific.
-- Choose D only if repeat usage appears in saved sessions.
