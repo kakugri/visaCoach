@@ -205,14 +205,16 @@ Completed hardening:
 - Production health checks confirmed MongoDB, AI runtime counters, and analytics events including `session_started` and `question_set_prepared`.
 - Gemini quota/provider strategy has been decided for the current beta.
 - Exposed test keys have been rotated for the current build/deploy cycle.
+- Uptime Kuma monitors are configured for the frontend, backend liveness, backend health, and analytics status.
+- `npm run beta:health` verified production liveness, health, AI runtime status, and analytics counters without spending Gemini quota.
 
 Remaining hardening:
 
-- Configure the Uptime Kuma monitors from `deploy/oracle-traefik/MONITORING.md`.
+- No open hardening items for the current public beta. Continue monitoring during beta usage.
 
 ## Milestone 7: Question Personalization And Profile Onboarding
 
-Status: core complete for question personalization; onboarding polish in progress. The product keeps the static question bank as a fallback while using backend-generated personalized question sets when Gemini is available. Saved sessions can relaunch practice with prior applicant context prefilled, logged-in users can save a practice profile before starting a simulation, and first-run registrations are guided into that setup.
+Status: complete for the current public beta. The product keeps the static question bank as a fallback while using backend-generated personalized question sets when Gemini is available. Saved sessions can relaunch practice with prior applicant context prefilled, logged-in users can save a practice profile before starting a simulation, first-run registrations are guided into setup, and sanitized analytics track whether personalized questions are being used successfully.
 
 Goal: make each practice session feel tailored without making the first-use flow slower or fragile.
 
@@ -268,7 +270,7 @@ Exit criteria:
 
 ## Current Priority
 
-Milestones 1 and 2 are implemented in the core no-login flow. Milestone 3 is now core-complete on the backend with structured feedback, visa-specific prompt profiles, validation, local fallback, and tests. Milestone 4 is complete for the current product scope. Milestone 6 is live. Milestone 5 polish and Milestone 7 personalization/profile onboarding are the active workstreams.
+Milestones 1 through 7 are complete for the current public beta scope. Milestone 8 remains intentionally deferred until beta usage shows whether to deepen visa coaching or expand into another interview mode. The active workstream is beta learning and operational review.
 
 ## Active Sub-Roadmaps
 
@@ -297,8 +299,8 @@ Purpose: make the deployed beta observable and low-drama to operate.
 - M6.1 Oracle Traefik deployment bundle: complete.
 - M6.2 Non-AI production smoke test: complete.
 - M6.3 Runtime health and analytics counters: complete.
-- M6.4 Uptime Kuma monitor setup: external next step.
-  - Use `deploy/oracle-traefik/MONITORING.md`.
+- M6.4 Uptime Kuma monitor setup: complete.
+  - Four VisaCoach HTTP monitors are configured for frontend, liveness, health, and analytics status.
 - M6.5 AI quota/provider decision: complete for current beta.
 - M6.6 Key rotation: complete for current build/deploy cycle.
 
@@ -318,6 +320,19 @@ Purpose: make saved profiles useful without slowing down no-login practice.
 - M7.5 Personalization quality loop: complete for current scope.
   - Use beta analytics and feedback to learn whether personalized questions are actually better than the question bank.
 
+### Beta Learning
+
+Purpose: learn from real usage before adding scope.
+
+- BL.1 Watch reliability: active.
+  - Uptime Kuma alerts, `/api/health`, MongoDB status, AI quota cooldown, account/session errors.
+- BL.2 Watch funnel behavior: active.
+  - `question_set_prepared`, `session_started`, `first_answer_submitted`, `session_completed`, `summary_copied`.
+- BL.3 Collect qualitative feedback: active.
+  - Use Contact page feedback template and direct user conversations.
+- BL.4 Decision gate: pending.
+  - Choose between deeper visa coaching and M8 mode-architecture planning.
+
 ### M8.x: Expansion Beyond Visa Interviews
 
 Purpose: avoid premature sprawl while preparing the architecture for later interview modes.
@@ -328,6 +343,6 @@ Purpose: avoid premature sprawl while preparing the architecture for later inter
 
 Immediate next build priorities:
 
-- Configure Uptime Kuma checks from `deploy/oracle-traefik/MONITORING.md`.
+- Follow `BETA_LEARNING_PLAN.md` for the first public beta review cycle.
 - Watch beta usage for account/session errors, confusing setup steps, and whether personalized questions outperform the static question bank.
 - Use early feedback to decide whether to deepen visa practice or begin M8 mode-architecture planning.

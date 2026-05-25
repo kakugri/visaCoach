@@ -4,14 +4,14 @@ Use this after deploying VisaCoach on the Oracle Traefik stack. The goal for bet
 
 ## Uptime Kuma Monitors
 
-Create these monitors in Uptime Kuma.
+Create these monitors in Uptime Kuma. Plain `HTTP(s)` monitors are enough for this beta. If your Uptime Kuma build exposes `HTTP(s) - Keyword`, you can use the optional keyword shown below, but it is not required.
 
 | Name | Type | URL | Expected |
 | --- | --- | --- | --- |
-| VisaCoach frontend | HTTP(s) | `https://visacoach.kakugri.dev/` | status 200 |
-| VisaCoach backend live | HTTP(s) keyword | `https://visacoach.kakugri.dev/api/live` | `"status":"ok"` |
-| VisaCoach backend health | HTTP(s) keyword | `https://visacoach.kakugri.dev/api/health` | `"status":"ok"` |
-| VisaCoach analytics route | HTTP(s) keyword | `https://visacoach.kakugri.dev/api/analytics/status` | `"totalEvents"` |
+| VisaCoach frontend | HTTP(s) | `https://visacoach.kakugri.dev/` | status 200-299 |
+| VisaCoach backend live | HTTP(s) | `https://visacoach.kakugri.dev/api/live` | status 200-299; optional keyword `"status":"ok"` |
+| VisaCoach backend health | HTTP(s) | `https://visacoach.kakugri.dev/api/health` | status 200-299; optional keyword `"status":"ok"` |
+| VisaCoach analytics route | HTTP(s) | `https://visacoach.kakugri.dev/api/analytics/status` | status 200-299; optional keyword `"totalEvents"` |
 
 Suggested intervals:
 
@@ -20,6 +20,13 @@ Suggested intervals:
 - Analytics status: 5-10 minutes.
 
 Keep retry count at 2 or 3 so brief deploy restarts do not page you unnecessarily.
+
+Dashboard target after setup:
+
+```text
+Up: 4
+Down: 0
+```
 
 ## What Health Means
 

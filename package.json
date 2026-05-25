@@ -7,7 +7,8 @@
         "start:frontend": "cd frontend && npm start",
         "start:backend": "cd backend && node server.js",
         "start:env": "cp .env backend/.env",
-        "smoke:prod": "bash scripts/smoke-production.sh"
+        "smoke:prod": "bash scripts/smoke-production.sh",
+        "beta:health": "bash scripts/beta-health-report.sh"
     },
     "devDependencies": {
         "concurrently": "^9.1.2"

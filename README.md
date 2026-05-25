@@ -19,7 +19,7 @@ The first-use flow does not require login. Authenticated history and remote AI f
 - Copyable end-of-session practice summary.
 - Authenticated users can save and revisit session history from MongoDB.
 - Basic About, Privacy, Terms, and Contact pages are included for public demos.
-- Local-only analytics events are recorded for session starts, first answers, completions, copied summaries, and feedback source usage.
+- Local and server-side sanitized analytics track session starts, first answers, completions, copied summaries, feedback source usage, and question-set source.
 - Backend rate limiting, security headers, and request body limits are configured.
 
 ## Product Boundary
@@ -96,8 +96,16 @@ The backend runs at `http://localhost:5000`.
 
 For production setup, environment variables, health checks, and the Oracle Traefik deployment bundle, see [DEPLOYMENT.md](./DEPLOYMENT.md).
 
+For the public beta review cadence and decision gates, see [BETA_LEARNING_PLAN.md](./BETA_LEARNING_PLAN.md).
+
+To check production liveness, runtime health, and analytics counters without spending Gemini quota:
+
+```bash
+npm run beta:health
+```
+
 ## Near-Term Roadmap
 
 - Add interview modes after the visa flow proves useful: job, school, founder, and grant/pitch interviews.
 - Monitor first public usage for quota pressure, account/session errors, and confusing setup steps.
-- Configure production uptime checks from the Oracle Traefik monitoring runbook.
+- Use beta feedback to decide whether to deepen visa coaching before expanding modes.
