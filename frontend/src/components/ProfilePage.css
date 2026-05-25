@@ -277,6 +277,49 @@
   width: 100%;
 }
 
+.session-toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) repeat(3, minmax(140px, 180px));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.session-toolbar label {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.session-toolbar span {
+  color: var(--text-light);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.session-toolbar input,
+.session-toolbar select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--border-lighter);
+  border-radius: var(--radius-sm);
+  background-color: #ffffff;
+  color: var(--text-dark);
+  font: inherit;
+  padding: 0.55rem 0.7rem;
+}
+
+.session-toolbar input:focus,
+.session-toolbar select:focus {
+  outline: 2px solid #bfdbfe;
+  border-color: #60a5fa;
+}
+
 .saved-session-list {
   display: flex;
   flex-direction: column;
@@ -721,6 +764,10 @@ input:checked + .slider:before {
   .profile-stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .session-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   
   .insights-grid {
     grid-template-columns: 1fr;
@@ -752,10 +799,26 @@ input:checked + .slider:before {
     flex-direction: column;
     align-items: flex-start;
   }
+
+  .session-actions {
+    width: 100%;
+  }
+
+  .session-actions .btn {
+    flex: 1 1 180px;
+  }
 }
 
 @media (max-width: 576px) {
   .profile-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-content {
+    padding: 1rem;
+  }
+
+  .session-toolbar {
     grid-template-columns: 1fr;
   }
   

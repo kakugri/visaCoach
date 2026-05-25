@@ -118,8 +118,6 @@ svg {
   z-index: 20;
 }
 
-.user-dropdown:hover .dropdown-menu,
-.user-dropdown:focus-within .dropdown-menu,
 .dropdown-menu.open {
   display: grid;
 }

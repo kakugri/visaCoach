@@ -115,18 +115,22 @@ Deliverables:
   - top improvement areas
   - copied/exported summary
   - delete saved session
+  - search, filter, and sort saved sessions
+  - restart practice from a saved session with saved context prefilled
+- Add basic account data export from settings.
 - Remove premium/upgrade language until there is a real monetization plan.
 
 Exit criteria:
 
 - Logged-in users can see real saved history.
 - Logged-in users can delete saved sessions.
+- Logged-in users can export account/session data.
 - Logged-out users can still complete a session.
 - The profile area no longer contains mock/premium dashboard artifacts.
 
 ## Milestone 5: UI And Launch Polish
 
-Status: in progress. Legacy pages/claims removed, info pages added, local analytics added, backend rate limiting added, mobile CSS pass started, and Playwright desktop/mobile checks now cover landing, prep, full session completion, summary copy, saved-session navigation, and local-session migration after registration.
+Status: in progress. Legacy pages/claims removed, info pages added, local analytics added, backend rate limiting added, account navigation polished, mobile CSS pass started, and Playwright desktop/mobile checks now cover landing, prep, full session completion, summary copy, saved-session search/filter/delete, practice-again from history, account export, dropdown behavior, and local-session migration after registration.
 
 Goal: make the app feel credible enough to share publicly.
 
@@ -190,11 +194,11 @@ Remaining hardening:
 - Rotate any exposed Gemini keys after testing.
 - Decide whether to enable paid Gemini billing or add a secondary provider.
 - Add uptime and error monitoring beyond Docker logs.
-- Add a simple export path for saved sessions.
+- Add server-side account deletion/export hardening if the app moves beyond public beta.
 
 ## Milestone 7: Question Personalization And Profile Onboarding
 
-Status: in progress. The product now keeps the static question bank as a fallback while adding backend-generated personalized question sets when Gemini is available.
+Status: core complete for question personalization; onboarding polish remains. The product keeps the static question bank as a fallback while using backend-generated personalized question sets when Gemini is available. Saved sessions can now relaunch practice with prior applicant context prefilled.
 
 Goal: make each practice session feel tailored without making the first-use flow slower or fragile.
 
@@ -214,6 +218,7 @@ Deliverables:
 - Add a "personalize questions with my context" control.
 - Add pre-practice sign-in/create-profile entry points.
 - Save question-set source metadata with account history.
+- Reuse saved profile/session context when starting another practice session.
 - Review whether static prep tips should also become model-generated or remain curated.
 
 Exit criteria:
@@ -252,7 +257,7 @@ Milestones 1 and 2 are implemented in the core no-login flow. Milestone 3 is now
 
 Immediate next build priorities:
 
-- Finish question personalization and source labeling in production.
 - Revisit the prep screen layout now that profile-first and no-login-first are both supported.
 - Add frontend tests for summary generation, structured feedback rendering, and account prompts.
 - Expand Playwright checks to cover live authenticated login and profile refresh behavior.
+- Decide whether account deletion needs a real backend endpoint before broader public launch.

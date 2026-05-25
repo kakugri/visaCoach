@@ -104,7 +104,7 @@ function StructuredFeedback({ feedback, fallbackText, brief }) {
   );
 }
 
-function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack }) {
+function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = null, onGoBack }) {
   // State variables
   const [interviewQuestions, setInterviewQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -118,11 +118,14 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack }) {
   const [preparationTips, setPreparationTips] = useState({general: [], specific: []});
   const [commonMistakes, setCommonMistakes] = useState([]);
   const [showPrep, setShowPrep] = useState(true);
-  const [userConfidence, setUserConfidence] = useState(5);
-  const [postSessionConfidence, setPostSessionConfidence] = useState(5);
-  const [userNeeds, setUserNeeds] = useState([]);
-  const [sessionContext, setSessionContext] = useState(DEFAULT_SESSION_CONTEXT);
-  const [feedbackLevel, setFeedbackLevel] = useState('detailed');
+  const [userConfidence, setUserConfidence] = useState(initialDraft?.confidence?.after || initialDraft?.confidence?.before || 5);
+  const [postSessionConfidence, setPostSessionConfidence] = useState(initialDraft?.confidence?.after || initialDraft?.confidence?.before || 5);
+  const [userNeeds, setUserNeeds] = useState(Array.isArray(initialDraft?.concerns) ? initialDraft.concerns : []);
+  const [sessionContext, setSessionContext] = useState({
+    ...DEFAULT_SESSION_CONTEXT,
+    ...(initialDraft?.sessionContext || {}),
+  });
+  const [feedbackLevel, setFeedbackLevel] = useState(initialDraft?.feedbackLevel || 'detailed');
   const [usePersonalizedQuestions, setUsePersonalizedQuestions] = useState(true);
   const [isPreparingQuestions, setIsPreparingQuestions] = useState(false);
   const [questionSetMeta, setQuestionSetMeta] = useState({
@@ -775,6 +778,7 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack }) {
                   max="10" 
                   value={userConfidence}
                   onChange={(e) => setUserConfidence(parseInt(e.target.value))}
+                  aria-label="Interview confidence before practice"
                 />
                 <div className="slider-progress" style={{width: `${(userConfidence-1) * 10}%`}}></div>
               </div>

@@ -18,6 +18,24 @@ const getSessionStrengths = (session) => session.stats?.strongAreas || session.s
 
 const getSessionImprovements = (session) => session.stats?.improvementAreas || session.weaknesses || [];
 
+const getSessionDateValue = (session) => {
+  const date = new Date(session.date || session.savedAt || 0);
+  return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+};
+
+const sessionMatchesSearch = (session, searchTerm) => {
+  if (!searchTerm) return true;
+  const questions = getSessionQuestions(session);
+  const searchable = [
+    session.country,
+    session.visaType,
+    ...Object.values(session.sessionContext || {}),
+    ...questions.flatMap((item) => [item.question, item.answer, item.userResponse, item.feedback, item.agentResponse]),
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  return searchable.includes(searchTerm.toLowerCase());
+};
+
 const buildSessionSummary = (session) => {
   const questions = getSessionQuestions(session);
   const context = session.sessionContext || {};
@@ -58,6 +76,10 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [statusMessage, setStatusMessage] = useState('');
   const [deletingSessionId, setDeletingSessionId] = useState('');
+  const [sessionSearch, setSessionSearch] = useState('');
+  const [countryFilter, setCountryFilter] = useState('all');
+  const [visaFilter, setVisaFilter] = useState('all');
+  const [sessionSort, setSessionSort] = useState('newest');
 
   useEffect(() => {
     setActiveTab(initialTab);
@@ -117,6 +139,25 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
     };
   }, [sessions]);
 
+  const filterOptions = useMemo(() => ({
+    countries: [...new Set(sessions.map((session) => session.country).filter(Boolean))].sort(),
+    visaTypes: [...new Set(sessions.map((session) => session.visaType).filter(Boolean))].sort(),
+  }), [sessions]);
+
+  const filteredSessions = useMemo(() => {
+    const filtered = sessions.filter((session) => (
+      (countryFilter === 'all' || session.country === countryFilter) &&
+      (visaFilter === 'all' || session.visaType === visaFilter) &&
+      sessionMatchesSearch(session, sessionSearch.trim())
+    ));
+
+    return [...filtered].sort((a, b) => {
+      if (sessionSort === 'score') return getSessionScore(b) - getSessionScore(a);
+      if (sessionSort === 'oldest') return getSessionDateValue(a) - getSessionDateValue(b);
+      return getSessionDateValue(b) - getSessionDateValue(a);
+    });
+  }, [countryFilter, sessionSearch, sessionSort, sessions, visaFilter]);
+
   const handleCopySession = async (session) => {
     try {
       await navigator.clipboard.writeText(buildSessionSummary(session));
@@ -173,6 +214,38 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
       setStatusMessage('Saved session could not be deleted.');
     } finally {
       setDeletingSessionId('');
+    }
+  };
+
+  const handlePracticeAgain = (session) => {
+    if (session.country && session.visaType) {
+      localStorage.setItem('visaCoach:practiceDraft', JSON.stringify({
+        country: session.country,
+        visaType: session.visaType,
+        sessionContext: session.sessionContext || {},
+        confidence: session.confidence || {},
+        concerns: Array.isArray(session.concerns) ? session.concerns : [],
+        feedbackLevel: session.feedbackLevel || 'detailed',
+      }));
+    }
+
+    navigate('/interview');
+  };
+
+  const handleExportData = async () => {
+    const exportData = {
+      exportedAt: new Date().toISOString(),
+      profile: userData || user || null,
+      sessions,
+    };
+
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(exportData, null, 2));
+      setStatusMessage('Account data copied.');
+    } catch (error) {
+      console.error('Unable to copy account data:', error);
+      localStorage.setItem('visaCoach:accountExport', JSON.stringify(exportData));
+      setStatusMessage('Clipboard was unavailable, so the export was saved locally.');
     }
   };
 
@@ -238,88 +311,148 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
       </div>
 
       {sessions.length ? (
-        <div className="saved-session-list">
-          {sessions.map((session, index) => {
-            const questions = getSessionQuestions(session);
-            const strengths = getSessionStrengths(session);
-            const improvements = getSessionImprovements(session);
+        <>
+          <div className="session-toolbar">
+            <label className="session-search">
+              <span>Search</span>
+              <input
+                type="search"
+                value={sessionSearch}
+                onChange={(event) => setSessionSearch(event.target.value)}
+                placeholder="Search sessions"
+              />
+            </label>
+            <label>
+              <span>Country</span>
+              <select value={countryFilter} onChange={(event) => setCountryFilter(event.target.value)}>
+                <option value="all">All countries</option>
+                {filterOptions.countries.map((country) => (
+                  <option value={country} key={country}>{country}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>Visa</span>
+              <select value={visaFilter} onChange={(event) => setVisaFilter(event.target.value)}>
+                <option value="all">All visas</option>
+                {filterOptions.visaTypes.map((visaType) => (
+                  <option value={visaType} key={visaType}>{visaType}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>Sort</span>
+              <select value={sessionSort} onChange={(event) => setSessionSort(event.target.value)}>
+                <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
+                <option value="score">Highest score</option>
+              </select>
+            </label>
+          </div>
 
-            return (
-              <article className="saved-session-card" key={session._id || index}>
-                <div className="saved-session-header">
-                  <div>
-                    <h4>{session.country || 'Visa'} {session.visaType || 'Practice'}</h4>
-                    <p>{formatDate(session.date || session.savedAt)} · {questions.length} answers</p>
-                  </div>
-                  <span className="score-badge">{getSessionScore(session)}%</span>
-                </div>
+          {filteredSessions.length ? (
+            <div className="saved-session-list">
+              {filteredSessions.map((session, index) => {
+                const questions = getSessionQuestions(session);
+                const strengths = getSessionStrengths(session);
+                const improvements = getSessionImprovements(session);
 
-                <div className="session-meta-grid">
-                  {session.sessionContext?.homeCountry && (
-                    <div>
-                      <span>Home context</span>
-                      <p>{session.sessionContext.homeCountry}</p>
+                return (
+                  <article className="saved-session-card" key={session._id || index}>
+                    <div className="saved-session-header">
+                      <div>
+                        <h4>{session.country || 'Visa'} {session.visaType || 'Practice'}</h4>
+                        <p>{formatDate(session.date || session.savedAt)} · {questions.length} answers</p>
+                      </div>
+                      <span className="score-badge">{getSessionScore(session)}%</span>
                     </div>
-                  )}
-                  {session.sessionContext?.programOrPurpose && (
-                    <div>
-                      <span>Purpose</span>
-                      <p>{session.sessionContext.programOrPurpose}</p>
-                    </div>
-                  )}
-                  {session.confidence && (
-                    <div>
-                      <span>Confidence</span>
-                      <p>{session.confidence.before || 'N/A'}/10 to {session.confidence.after || 'N/A'}/10</p>
-                    </div>
-                  )}
-                </div>
 
-                <div className="session-insights">
-                  <div>
-                    <h5>Strengths</h5>
-                    <ul>
-                      {(strengths.length ? strengths : ['Session completed']).slice(0, 3).map((item) => (
-                        <li key={item}>{item}</li>
+                    <div className="session-meta-grid">
+                      {session.sessionContext?.homeCountry && (
+                        <div>
+                          <span>Home context</span>
+                          <p>{session.sessionContext.homeCountry}</p>
+                        </div>
+                      )}
+                      {session.sessionContext?.programOrPurpose && (
+                        <div>
+                          <span>Purpose</span>
+                          <p>{session.sessionContext.programOrPurpose}</p>
+                        </div>
+                      )}
+                      {session.confidence && (
+                        <div>
+                          <span>Confidence</span>
+                          <p>{session.confidence.before || 'N/A'}/10 to {session.confidence.after || 'N/A'}/10</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="session-insights">
+                      <div>
+                        <h5>Strengths</h5>
+                        <ul>
+                          {(strengths.length ? strengths : ['Session completed']).slice(0, 3).map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <h5>Focus Areas</h5>
+                        <ul>
+                          {(improvements.length ? improvements : ['Keep practicing with concrete answers']).slice(0, 3).map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    <details className="session-answers">
+                      <summary>Review answers</summary>
+                      {questions.map((item, questionIndex) => (
+                        <div className="session-answer" key={`${item.question}-${questionIndex}`}>
+                          <strong>{item.question}</strong>
+                          <p>{item.answer || item.userResponse || 'No answer saved.'}</p>
+                          <small>{item.feedback || item.agentResponse || 'No feedback saved.'}</small>
+                        </div>
                       ))}
-                    </ul>
-                  </div>
-                  <div>
-                    <h5>Focus Areas</h5>
-                    <ul>
-                      {(improvements.length ? improvements : ['Keep practicing with concrete answers']).slice(0, 3).map((item) => (
-                        <li key={item}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
+                    </details>
 
-                <details className="session-answers">
-                  <summary>Review answers</summary>
-                  {questions.map((item, questionIndex) => (
-                    <div className="session-answer" key={`${item.question}-${questionIndex}`}>
-                      <strong>{item.question}</strong>
-                      <p>{item.answer || item.userResponse || 'No answer saved.'}</p>
-                      <small>{item.feedback || item.agentResponse || 'No feedback saved.'}</small>
+                    <div className="session-actions">
+                      <button className="btn btn-outline" onClick={() => handleCopySession(session)}>Copy Summary</button>
+                      <button className="btn btn-primary" onClick={() => handlePracticeAgain(session)}>Practice Again</button>
+                      <button
+                        className="btn btn-danger"
+                        onClick={() => handleDeleteSession(session)}
+                        disabled={deletingSessionId === (session.sessionId || session._id)}
+                      >
+                        {deletingSessionId === (session.sessionId || session._id) ? 'Deleting...' : 'Delete Session'}
+                      </button>
                     </div>
-                  ))}
-                </details>
-
-                <div className="session-actions">
-                  <button className="btn btn-outline" onClick={() => handleCopySession(session)}>Copy Summary</button>
-                  <button className="btn btn-primary" onClick={() => navigate('/interview')}>Practice Again</button>
-                  <button
-                    className="btn btn-danger"
-                    onClick={() => handleDeleteSession(session)}
-                    disabled={deletingSessionId === (session.sessionId || session._id)}
-                  >
-                    {deletingSessionId === (session.sessionId || session._id) ? 'Deleting...' : 'Delete Session'}
-                  </button>
-                </div>
-              </article>
-            );
-          })}
-        </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="no-interviews">
+              <div className="empty-state">
+                <h4>No matching sessions</h4>
+                <p>Adjust your search or filters.</p>
+                <button
+                  onClick={() => {
+                    setSessionSearch('');
+                    setCountryFilter('all');
+                    setVisaFilter('all');
+                    setSessionSort('newest');
+                  }}
+                  className="btn btn-outline"
+                >
+                  Clear Filters
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       ) : (
         <div className="no-interviews">
           <div className="empty-state">
@@ -341,7 +474,8 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
         <h4>Data</h4>
         <p>Your saved sessions include practice answers, AI feedback, context you entered, and readiness summaries.</p>
         <div className="settings-buttons">
-          <button className="btn btn-outline" onClick={() => setActiveTab('sessions')}>View Saved Sessions</button>
+          <button className="btn btn-primary" onClick={handleExportData}>Copy Account Data</button>
+          <button className="btn btn-outline" onClick={() => navigate('/history')}>View Saved Sessions</button>
           <button className="btn btn-outline" onClick={handleLogout}>Sign Out</button>
         </div>
       </div>
@@ -374,19 +508,19 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
         <nav className="sidebar-nav">
           <button
             className={`sidebar-nav-item ${activeTab === 'sessions' ? 'active' : ''}`}
-            onClick={() => setActiveTab('sessions')}
+            onClick={() => navigate('/history')}
           >
             Saved Sessions
           </button>
           <button
             className={`sidebar-nav-item ${activeTab === 'profile' ? 'active' : ''}`}
-            onClick={() => setActiveTab('profile')}
+            onClick={() => navigate('/profile')}
           >
             Profile
           </button>
           <button
             className={`sidebar-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
-            onClick={() => setActiveTab('settings')}
+            onClick={() => navigate('/settings')}
           >
             Settings
           </button>

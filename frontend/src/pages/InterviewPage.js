@@ -16,11 +16,26 @@ function InterviewPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [animateIn, setAnimateIn] = useState(false);
+  const [practiceDraft, setPracticeDraft] = useState(null);
   const selectionRef = useRef(null);
 
   useEffect(() => {
     // Add animation class after component mounts
     setAnimateIn(true);
+
+    try {
+      const draft = JSON.parse(localStorage.getItem('visaCoach:practiceDraft') || 'null');
+      if (draft?.country && draft?.visaType) {
+        setPracticeDraft(draft);
+        setSelectedCountry(draft.country);
+        setSelectedVisaType(draft.visaType);
+        setLoadingProgress(0);
+        localStorage.removeItem('visaCoach:practiceDraft');
+      }
+    } catch (error) {
+      console.error('Unable to read practice draft:', error);
+      localStorage.removeItem('visaCoach:practiceDraft');
+    }
   }, []);
 
   useEffect(() => {
@@ -57,6 +72,7 @@ function InterviewPage() {
     setTimeout(() => {
       setSelectedCountry('');
       setSelectedVisaType('');
+      setPracticeDraft(null);
       setAnimateIn(true);
     }, 300);
   };
@@ -70,6 +86,7 @@ function InterviewPage() {
   const goToHome = () => {
     setSelectedCountry('');
     setSelectedVisaType('');
+    setPracticeDraft(null);
     setLoadingProgress(0);
     navigate('/');
   };
@@ -282,6 +299,7 @@ function InterviewPage() {
             <InterviewScreen
               selectedCountry={selectedCountry}
               selectedVisaType={selectedVisaType}
+              initialDraft={practiceDraft}
               onGoBack={handleGoBack}
             />
           )}

@@ -359,6 +359,17 @@ test('shows saved session history and copies a saved summary', async ({ page, co
   await expect(page.getByText('82%')).toBeVisible();
   await expect(page.getByText('Prepared a funding source before practice')).toBeVisible();
 
+  await page.getByLabel('Search').fill('Ghana');
+  await page.getByLabel('Country').selectOption('US');
+  await page.getByLabel('Visa').selectOption('F1');
+  await page.getByLabel('Sort').selectOption('score');
+  await expect(page.getByText('US F1')).toBeVisible();
+
+  await page.getByLabel('Search').fill('Canada');
+  await expect(page.getByText('No matching sessions')).toBeVisible();
+  await page.getByRole('button', { name: 'Clear Filters' }).click();
+  await expect(page.getByText('US F1')).toBeVisible();
+
   await page.getByText('Review answers').click();
   await expect(page.getByText('How will you finance your education?')).toBeVisible();
   await expect(page.getByText('My family sponsor and savings will fund my studies.')).toBeVisible();
@@ -379,7 +390,28 @@ test('shows saved session history and copies a saved summary', async ({ page, co
   await expectNoHorizontalOverflow(page);
 });
 
-test('opens profile and settings from the account dropdown', async ({ page }) => {
+test('starts a new practice from a saved session with saved context', async ({ page }) => {
+  await mockSavedSessions(page);
+  await page.addInitScript(() => {
+    localStorage.setItem('token', 'test-token');
+  });
+
+  await page.goto('/history');
+
+  await page.getByRole('button', { name: 'Practice Again' }).click();
+  await expect(page).toHaveURL(/\/interview$/);
+  await expect(page.getByRole('heading', { name: 'Prepare for Your Interview' })).toBeVisible({ timeout: 6_000 });
+  await expect(page.getByText('Destination: US')).toBeVisible();
+  await expect(page.getByText('Visa type: F1')).toBeVisible();
+  await expect(page.getByLabel('Home country or current residence')).toHaveValue('Ghana');
+  await expect(page.getByLabel('Program, role, or trip purpose')).toHaveValue('MS Computer Science');
+  await expect(page.getByLabel('Interview confidence before practice')).toHaveValue('7');
+  await expect(page.getByLabel('Detailed (Provide specific suggestions)')).toBeChecked();
+  await expectNoHorizontalOverflow(page);
+});
+
+test('opens profile and settings from the account dropdown', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await mockSavedSessions(page);
   await page.addInitScript(() => {
     localStorage.setItem('token', 'test-token');
@@ -393,14 +425,32 @@ test('opens profile and settings from the account dropdown', async ({ page }) =>
 
   await expect(page.getByRole('heading', { name: 'Saved Sessions' })).toBeVisible();
   await expect(page.getByRole('button', { name: /Test User/ })).toBeVisible();
+  await expect(page.locator('.dropdown-menu')).toBeHidden();
+
+  await page.getByRole('button', { name: /Test User/ }).hover();
+  await expect(page.locator('.dropdown-menu')).toBeHidden();
 
   await page.getByRole('button', { name: /Test User/ }).click();
   await expect(page.getByRole('menuitem', { name: 'Profile' })).toBeVisible();
   await expect(page.getByRole('menuitem', { name: 'Settings' })).toBeVisible();
 
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.dropdown-menu')).toBeHidden();
+
+  await page.getByRole('button', { name: /Test User/ }).click();
   await page.getByRole('menuitem', { name: 'Settings' }).click();
   await expect(page).toHaveURL(/\/settings$/);
   await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Copy Account Data' }).click();
+  await expect(page.getByText('Account data copied.')).toBeVisible();
+  const accountData = JSON.parse(await page.evaluate(() => navigator.clipboard.readText()));
+  expect(accountData.profile.name).toBe('Test User');
+  expect(accountData.sessions[0].sessionId).toBe('session-1');
+
+  await page.getByRole('button', { name: 'Saved Sessions', exact: true }).click();
+  await expect(page).toHaveURL(/\/history$/);
+  await expect(page.getByRole('heading', { name: 'Saved Sessions' })).toBeVisible();
 
   await page.getByRole('button', { name: /Test User/ }).click();
   await page.getByRole('menuitem', { name: 'Profile' }).click();
