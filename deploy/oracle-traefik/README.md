@@ -61,9 +61,11 @@ In `/opt/docker/.env`, add:
 VISACOACH_HOSTNAME=visa.yourdomain.com
 VISACOACH_APP_DIR=/opt/docker/apps/visacoach
 VISACOACH_GOOGLE_CLIENT_ID=
+VISACOACH_CONTACT_URL=mailto:feedback@yourdomain.com?subject=VisaCoach%20feedback
 ```
 
 `VISACOACH_APP_DIR` can be omitted if you keep the app at `/opt/docker/apps/visacoach`. `VISACOACH_GOOGLE_CLIENT_ID` is optional. If you use Google OAuth, set it to the same OAuth client ID used by the frontend.
+`VISACOACH_CONTACT_URL` is optional. If set, the public Contact page shows it as the support/feedback channel.
 
 If `/opt/docker/.env` does not already define `DOCKER_DATA_DIR`, add:
 

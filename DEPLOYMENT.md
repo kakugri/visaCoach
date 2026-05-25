@@ -30,9 +30,11 @@ Production environment variables:
 ```bash
 REACT_APP_API_BASE_URL=https://your-backend.example.com
 REACT_APP_GOOGLE_CLIENT_ID=your-google-oauth-client-id
+REACT_APP_CONTACT_URL=mailto:feedback@example.com?subject=VisaCoach%20feedback
 ```
 
 `REACT_APP_GOOGLE_CLIENT_ID` is optional. If it is not set, email login/register still renders and Google auth is hidden.
+`REACT_APP_CONTACT_URL` is optional. If set, the Contact page links to that feedback/support channel.
 
 ## Backend
 

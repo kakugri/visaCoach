@@ -525,6 +525,29 @@ test('renders the visa practice landing screen', async ({ page }) => {
   await expectNoHorizontalOverflow(page);
 });
 
+test('renders public info pages and copies the feedback template', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+
+  await page.goto('/privacy');
+  await expect(page.getByRole('heading', { name: 'Privacy Policy' })).toBeVisible();
+  await expect(page.getByText('Practice answers, feedback')).toBeVisible();
+
+  await page.goto('/terms');
+  await expect(page.getByRole('heading', { name: 'Terms of Service' })).toBeVisible();
+  await expect(page.getByText('No guarantees')).toBeVisible();
+
+  await page.goto('/contact');
+  await expect(page.getByRole('heading', { name: 'Contact' })).toBeVisible();
+  await expect(page.getByText('VisaCoach feedback')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Copy Feedback Template' }).click();
+  await expect(page.getByText('Feedback template copied.')).toBeVisible();
+  const template = await page.evaluate(() => navigator.clipboard.readText());
+  expect(template).toContain('Visa path practiced:');
+  expect(template).toContain('Browser/device:');
+  await expectNoHorizontalOverflow(page);
+});
+
 test('opens the F1 prep screen from country and visa selection', async ({ page }) => {
   await page.goto('/');
   await chooseF1Path(page);

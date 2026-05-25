@@ -81,3 +81,92 @@
 .info-return:hover {
   background-color: #1d4ed8;
 }
+
+.contact-card {
+  display: grid;
+  gap: 16px;
+  margin-top: 28px;
+  padding: 18px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background-color: #eff6ff;
+}
+
+.contact-card h2 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+
+.contact-card p {
+  margin: 0;
+  color: #475569;
+  line-height: 1.6;
+}
+
+.contact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.contact-actions .info-return {
+  margin-top: 0;
+}
+
+.info-secondary-action {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #2563eb;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.info-secondary-action:hover {
+  background-color: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.contact-unconfigured {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 14px;
+  border: 1px solid #fed7aa;
+  border-radius: 6px;
+  background-color: #fff7ed;
+  color: #9a3412 !important;
+  font-weight: 700;
+}
+
+.feedback-template {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #334155;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.copy-status {
+  color: #166534 !important;
+  font-weight: 700;
+}
+
+@media (max-width: 560px) {
+  .contact-actions,
+  .contact-actions .info-return,
+  .info-secondary-action,
+  .contact-unconfigured {
+    width: 100%;
+  }
+}

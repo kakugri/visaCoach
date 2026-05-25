@@ -45,6 +45,7 @@ services:
       args:
         - REACT_APP_API_BASE_URL=https://${VISACOACH_HOSTNAME?}
         - REACT_APP_GOOGLE_CLIENT_ID=${VISACOACH_GOOGLE_CLIENT_ID:-}
+        - REACT_APP_CONTACT_URL=${VISACOACH_CONTACT_URL:-}
     container_name: visacoach-frontend
     restart: unless-stopped
     expose:

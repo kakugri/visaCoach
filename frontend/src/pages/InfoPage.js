@@ -1,7 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import logoSymbol from '../assets/images/logo-symbol.svg';
 import './InfoPage.css';
+
+const CONTACT_URL = process.env.REACT_APP_CONTACT_URL || '';
+
+const FEEDBACK_TEMPLATE = [
+  'VisaCoach feedback',
+  '',
+  'Visa path practiced:',
+  'What I was trying to do:',
+  'What felt confusing or broken:',
+  'What would make this more useful:',
+  'Browser/device:',
+].join('\n');
 
 const PAGE_CONTENT = {
   about: {
@@ -64,6 +76,17 @@ const PAGE_CONTENT = {
 
 function InfoPage({ type = 'about' }) {
   const content = PAGE_CONTENT[type] || PAGE_CONTENT.about;
+  const [copyStatus, setCopyStatus] = useState('');
+
+  const handleCopyFeedbackTemplate = async () => {
+    try {
+      await navigator.clipboard.writeText(FEEDBACK_TEMPLATE);
+      setCopyStatus('Feedback template copied.');
+    } catch (error) {
+      console.error('Unable to copy feedback template:', error);
+      setCopyStatus('Copy was unavailable. Select the template text manually.');
+    }
+  };
 
   return (
     <main className="info-page">
@@ -83,6 +106,35 @@ function InfoPage({ type = 'about' }) {
               <p>{section.body}</p>
             </div>
           ))}
+
+          {type === 'contact' && (
+            <div className="contact-card">
+              <div>
+                <h2>Send useful feedback</h2>
+                <p>
+                  Include the visa path, what happened, what you expected, and the device or browser used.
+                </p>
+              </div>
+
+              <div className="contact-actions">
+                {CONTACT_URL ? (
+                  <a className="info-return" href={CONTACT_URL} target="_blank" rel="noreferrer">
+                    Open Contact Channel
+                  </a>
+                ) : (
+                  <p className="contact-unconfigured">
+                    Contact channel is not configured in this deployment yet.
+                  </p>
+                )}
+                <button type="button" className="info-secondary-action" onClick={handleCopyFeedbackTemplate}>
+                  Copy Feedback Template
+                </button>
+              </div>
+
+              <pre className="feedback-template">{FEEDBACK_TEMPLATE}</pre>
+              {copyStatus && <p className="copy-status">{copyStatus}</p>}
+            </div>
+          )}
 
           <Link to="/" className="info-return">Return to practice</Link>
         </section>

@@ -133,7 +133,7 @@ Exit criteria:
 
 ## Milestone 5: UI And Launch Polish
 
-Status: in progress. Legacy pages/claims removed, info pages added, local analytics added, backend rate limiting added, account navigation polished, prep setup compacted, account export/delete hardened, unused mock components/services/assets removed, mobile CSS pass started, empty/loading/error states improved, and Playwright desktop/mobile checks now cover landing, prep, personalized-question fallback, full session completion, summary copy, saved-session search/filter/delete, practice-again from history, account retry, account export/delete, dropdown behavior, first-run account prompts, auth redirects, email login/profile refresh, and local-session migration after registration.
+Status: in progress. Legacy pages/claims removed, info pages added, contact feedback template added, local analytics added, backend rate limiting added, account navigation polished, prep setup compacted, account export/delete hardened, unused mock components/services/assets removed, mobile CSS pass started, empty/loading/error states improved, and Playwright desktop/mobile checks now cover landing, public info pages, prep, personalized-question fallback, full session completion, summary copy, saved-session search/filter/delete, practice-again from history, account retry, account export/delete, dropdown behavior, first-run account prompts, auth redirects, email login/profile refresh, and local-session migration after registration.
 
 Goal: make the app feel credible enough to share publicly.
 
@@ -266,5 +266,5 @@ Milestones 1 and 2 are implemented in the core no-login flow. Milestone 3 is now
 
 Immediate next build priorities:
 
-- Deploy the AI-runtime health update and inspect `checks.ai` after one real practice session.
+- Deploy the AI-runtime health/contact update and inspect `checks.ai` after one real practice session.
 - Watch first real usage for Gemini quota pressure and account/session error rates.
