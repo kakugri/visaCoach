@@ -1,5 +1,5 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { UserContext } from '../App';
 import logoSymbol from '../assets/images/logo-symbol.svg';
 import { API_BASE_URL } from '../services/apiConfig';
@@ -144,6 +144,16 @@ const buildPracticeProfileState = (account = {}) => {
   };
 };
 
+const hasPracticeProfileDetails = (practiceProfile = {}) => Boolean(
+  practiceProfile.updatedAt ||
+  practiceProfile.sessionContext?.homeCountry ||
+  practiceProfile.sessionContext?.institutionOrHost ||
+  practiceProfile.sessionContext?.programOrPurpose ||
+  practiceProfile.sessionContext?.fundingSource ||
+  practiceProfile.sessionContext?.returnPlan ||
+  practiceProfile.sessionContext?.notes
+);
+
 const sessionMatchesSearch = (session, searchTerm) => {
   if (!searchTerm) return true;
   const questions = getSessionQuestions(session);
@@ -190,7 +200,9 @@ const buildSessionSummary = (session) => {
 
 const ProfilePage = ({ initialTab = 'sessions' }) => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, token, handleLogout } = useContext(UserContext);
+  const practiceProfileRef = useRef(null);
   const [userData, setUserData] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -205,6 +217,9 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
   const [sessionSort, setSessionSort] = useState('newest');
   const [practiceProfile, setPracticeProfile] = useState(() => buildPracticeProfileState(user || {}));
   const [isSavingPracticeProfile, setIsSavingPracticeProfile] = useState(false);
+  const [isFirstRunPromptDismissed, setIsFirstRunPromptDismissed] = useState(() => (
+    localStorage.getItem('visaCoach:firstRunProfilePromptDismissed') === 'true'
+  ));
 
   useEffect(() => {
     setActiveTab(initialTab);
@@ -288,6 +303,30 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
       return getSessionDateValue(b) - getSessionDateValue(a);
     });
   }, [countryFilter, sessionSearch, sessionSort, sessions, visaFilter]);
+
+  const isSetupRoute = searchParams.get('setup') === '1';
+  const hasSavedPracticeProfile = hasPracticeProfileDetails(userData?.practiceProfile);
+  const shouldShowFirstRunPrompt = activeTab === 'profile' && !isLoading && !hasSavedPracticeProfile && (
+    isSetupRoute || (!isFirstRunPromptDismissed && stats.totalSessions === 0)
+  );
+
+  const clearSetupSearchParam = () => {
+    if (!isSetupRoute) return;
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('setup');
+    setSearchParams(nextParams, { replace: true });
+  };
+
+  const handleDismissFirstRunPrompt = () => {
+    localStorage.setItem('visaCoach:firstRunProfilePromptDismissed', 'true');
+    setIsFirstRunPromptDismissed(true);
+    clearSetupSearchParam();
+  };
+
+  const handleFocusPracticeProfile = () => {
+    practiceProfileRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    clearSetupSearchParam();
+  };
 
   const handleCopySession = async (session) => {
     try {
@@ -418,6 +457,9 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
         countryOfOrigin: data.practiceProfile?.sessionContext?.homeCountry || currentData?.countryOfOrigin,
         visaType: data.practiceProfile?.visaType || currentData?.visaType,
       }));
+      localStorage.setItem('visaCoach:firstRunProfilePromptDismissed', 'true');
+      setIsFirstRunPromptDismissed(true);
+      clearSetupSearchParam();
       setStatusMessage('Practice profile saved.');
     } catch (error) {
       console.error('Unable to save practice profile:', error);
@@ -519,8 +561,23 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
     }
   };
 
+  const renderFirstRunPrompt = () => (
+    <div className="first-run-profile-card">
+      <div>
+        <span className="first-run-kicker">First setup</span>
+        <h3>Set your practice defaults</h3>
+        <p>Choose your visa path and add the facts you want reused in practice.</p>
+      </div>
+      <div className="first-run-actions">
+        <button className="btn btn-primary" onClick={handleFocusPracticeProfile}>Set Defaults</button>
+        <button className="btn btn-outline" onClick={handleStartProfilePractice}>Start With Defaults</button>
+        <button className="btn btn-link" onClick={handleDismissFirstRunPrompt}>Dismiss</button>
+      </div>
+    </div>
+  );
+
   const renderPracticeProfile = () => (
-    <div className="practice-profile-card">
+    <div className="practice-profile-card" ref={practiceProfileRef}>
       <div className="section-heading">
         <div>
           <h3>Practice Profile</h3>
@@ -685,6 +742,8 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
           <p className="profile-membership">{userData?.email || user?.email || 'Signed in'}</p>
         </div>
       </div>
+
+      {shouldShowFirstRunPrompt && renderFirstRunPrompt()}
 
       <div className="profile-stats-grid">
         <div className="stat-card">

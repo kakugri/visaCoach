@@ -348,6 +348,53 @@ const mockRegistrationWithMigration = async (page) => {
   return migrationRequests;
 };
 
+const mockRegistrationWithoutMigration = async (page) => {
+  const saveHistoryRequests = [];
+
+  await page.route('**/api/auth/register', async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        token: 'new-user-token',
+        user: {
+          id: 'user-2',
+          name: 'First Run User',
+          email: 'first-run@example.com',
+        },
+      }),
+    });
+  });
+
+  await page.route('**/api/interview/save-history', async (route) => {
+    saveHistoryRequests.push(route.request().postDataJSON());
+    await route.fulfill({
+      status: 500,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'Unexpected migration request' }),
+    });
+  });
+
+  await page.route('**/api/auth/profile', async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        name: 'First Run User',
+        email: 'first-run@example.com',
+        createdAt: '2026-05-25T12:00:00.000Z',
+      }),
+    });
+  });
+
+  await page.route('**/api/interview/history', async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([]),
+    });
+  });
+
+  return saveHistoryRequests;
+};
+
 const chooseF1Path = async (page) => {
   await page.getByText('United States', { exact: true }).click();
   await expect(page.locator('.visa-type-container.expanded')).toBeVisible();
@@ -638,6 +685,30 @@ test('deletes the signed-in account from settings', async ({ page }) => {
     lastSession: null,
     seeded: 'true',
   });
+  await expectNoHorizontalOverflow(page);
+});
+
+test('guides new registrations into first practice setup', async ({ page }) => {
+  const saveHistoryRequests = await mockRegistrationWithoutMigration(page);
+
+  await page.goto('/register');
+  await page.getByLabel('Full Name').fill('First Run User');
+  await page.getByLabel('Email').fill('first-run@example.com');
+  await page.getByLabel('Password', { exact: true }).fill('strong-password');
+  await page.getByLabel('Confirm Password').fill('strong-password');
+  await page.getByLabel(/I agree to the Terms/).check();
+  await page.getByRole('button', { name: 'Create Account' }).click();
+
+  await expect(page).toHaveURL(/\/profile\?setup=1$/);
+  await expect(page.getByRole('heading', { name: 'Set your practice defaults' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Practice Profile' })).toBeVisible();
+  expect(saveHistoryRequests).toHaveLength(0);
+
+  await page.getByRole('button', { name: 'Start With Defaults' }).click();
+  await expect(page).toHaveURL(/\/interview$/);
+  await expect(page.getByRole('heading', { name: 'Prepare for Your Interview' })).toBeVisible({ timeout: 6_000 });
+  await expect(page.getByText('Destination: US')).toBeVisible();
+  await expect(page.getByText('Visa type: F1')).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 

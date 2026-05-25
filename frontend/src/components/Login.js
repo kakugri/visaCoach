@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { UserContext } from '../App';
 import GoogleAuth from './GoogleAuth';
 import logoSymbol from '../assets/images/logo-symbol.svg';
@@ -9,14 +9,26 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const { handleLoginSuccess } = useContext(UserContext);
+    const [isAuthenticating, setIsAuthenticating] = useState(false);
+    const { handleLoginSuccess, isLoggedIn } = useContext(UserContext);
     const navigate = useNavigate();
     const hasGoogleAuth = Boolean(process.env.REACT_APP_GOOGLE_CLIENT_ID);
 
     const finishAuth = async (user, token) => {
-        const migration = await handleLoginSuccess(user, token);
-        navigate(migration?.status === 'migrated' ? '/history' : '/interview');
+        setIsAuthenticating(true);
+
+        try {
+            const migration = await handleLoginSuccess(user, token);
+            navigate(migration?.status === 'migrated' ? '/history' : '/interview', { replace: true });
+        } catch (error) {
+            setIsAuthenticating(false);
+            throw error;
+        }
     };
+
+    if (isLoggedIn && !isAuthenticating) {
+        return <Navigate to="/interview" replace />;
+    }
 
     const handleSubmit = async (e) => {
         e.preventDefault();

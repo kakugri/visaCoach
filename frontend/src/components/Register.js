@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { UserContext } from '../App';
 import GoogleAuth from './GoogleAuth';
 import logoSymbol from '../assets/images/logo-symbol.svg';
@@ -11,14 +11,26 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  const { handleLoginSuccess } = useContext(UserContext);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const { handleLoginSuccess, isLoggedIn } = useContext(UserContext);
   const navigate = useNavigate();
   const hasGoogleAuth = Boolean(process.env.REACT_APP_GOOGLE_CLIENT_ID);
 
   const finishAuth = async (user, token) => {
-    const migration = await handleLoginSuccess(user, token);
-    navigate(migration?.status === 'migrated' ? '/history' : '/profile');
+    setIsAuthenticating(true);
+
+    try {
+      const migration = await handleLoginSuccess(user, token);
+      navigate(migration?.status === 'migrated' ? '/history' : '/profile?setup=1', { replace: true });
+    } catch (error) {
+      setIsAuthenticating(false);
+      throw error;
+    }
   };
+
+  if (isLoggedIn && !isAuthenticating) {
+    return <Navigate to="/profile" replace />;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();

@@ -86,19 +86,11 @@ function App() {
             <Route path="/" element={<InterviewPage />} />
             <Route 
               path="/login" 
-              element={
-                isLoggedIn ? 
-                <Navigate to="/interview" /> : 
-                <Login onLoginSuccess={handleLoginSuccess} />
-              } 
+              element={<Login onLoginSuccess={handleLoginSuccess} />}
             />
             <Route 
               path="/register" 
-              element={
-                isLoggedIn ? 
-                <Navigate to="/interview" /> : 
-                <Register onRegistrationSuccess={handleLoginSuccess} />
-              } 
+              element={<Register onRegistrationSuccess={handleLoginSuccess} />}
             />
             <Route
               path="/google"
