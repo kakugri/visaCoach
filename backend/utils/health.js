@@ -19,6 +19,7 @@ const getHealthPayload = ({
   startedAt = Date.now(),
   includeDetails = true,
   aiStatus = null,
+  analyticsStatus = null,
 }) => {
   const mongo = getMongoStatus(mongoose);
   const hasMongoProblem = config.mongoUriSet && mongo.readyState !== 1;
@@ -45,6 +46,10 @@ const getHealthPayload = ({
         geminiConfigured: config.geminiKeySet,
         ...aiStatus,
       };
+    }
+
+    if (analyticsStatus) {
+      payload.checks.analytics = analyticsStatus;
     }
   }
 

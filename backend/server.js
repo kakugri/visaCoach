@@ -5,12 +5,14 @@ const mongoose = require('mongoose');
 const interviewRoutes = require('./routes/interviewRoutes');
 const { getAiRuntimeStatus } = require('./controllers/interviewController');
 const authRoutes = require('./routes/authRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
 const { verifyToken } = require('./utils/authUtils');
 const User = require('./models/User');
 const { getRuntimeConfig, validateRuntimeConfig } = require('./config/runtimeConfig');
 const { createErrorHandler, createNotFoundHandler } = require('./middleware/errorHandlers');
 const { createRequestLogger } = require('./middleware/requestLogger');
 const { getHealthPayload } = require('./utils/health');
+const { getProductAnalyticsStatus } = require('./utils/productAnalytics');
 
 const app = express();
 const startedAt = Date.now();
@@ -92,6 +94,7 @@ app.get('/api/profile', authenticate, async (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/interview', interviewRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 app.get(['/live', '/api/live'], (req, res) => {
   res.json({
@@ -107,6 +110,7 @@ app.get(['/health', '/api/health'], (req, res) => {
     config,
     startedAt,
     aiStatus: getAiRuntimeStatus(),
+    analyticsStatus: getProductAnalyticsStatus(),
   });
   res.status(payload.status === 'ok' ? 200 : 503).json(payload);
 });

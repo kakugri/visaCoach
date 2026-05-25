@@ -59,6 +59,8 @@ GEMINI_API_KEY=your-gemini-api-key
 GEMINI_MODEL=gemini-2.5-flash-lite
 AI_RATE_LIMIT_WINDOW_MS=60000
 AI_RATE_LIMIT_MAX=20
+ANALYTICS_RATE_LIMIT_WINDOW_MS=60000
+ANALYTICS_RATE_LIMIT_MAX=120
 JSON_BODY_LIMIT=100kb
 REQUEST_LOGGING=true
 LOG_LEVEL=info
@@ -114,7 +116,7 @@ A healthy response returns `200` with:
 
 If MongoDB is configured but disconnected, health returns `503` with `status: "degraded"`.
 
-The detailed health payload also includes sanitized AI runtime state under `checks.ai`, including the configured model, Gemini quota cooldown status, and in-memory counts of Gemini responses versus local fallbacks since the backend process started. It does not expose API keys or user answers.
+The detailed health payload also includes sanitized AI runtime state under `checks.ai`, including the configured model, Gemini quota cooldown status, and in-memory counts of Gemini responses versus local fallbacks since the backend process started. Product event counters appear under `checks.analytics`. These fields do not expose API keys or user answers.
 
 ## Logging
 
@@ -187,7 +189,7 @@ For AI/quota diagnostics:
 curl https://visacoach.kakugri.dev/api/health
 ```
 
-Check `checks.ai.quotaCooldown.active`, `checks.ai.quotaCooldown.retryAfterSeconds`, and `checks.ai.usageSinceStart`.
+Check `checks.ai.quotaCooldown.active`, `checks.ai.quotaCooldown.retryAfterSeconds`, `checks.ai.usageSinceStart`, and `checks.analytics.eventsByName`.
 
 ## Rollback
 

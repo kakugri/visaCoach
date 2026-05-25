@@ -133,7 +133,7 @@ Exit criteria:
 
 ## Milestone 5: UI And Launch Polish
 
-Status: in progress. Legacy pages/claims removed, info pages added, contact feedback template added, local analytics added, backend rate limiting added, account navigation polished, prep setup compacted, account export/delete hardened, unused mock components/services/assets removed, mobile CSS pass started, empty/loading/error states improved, and Playwright desktop/mobile checks now cover landing, public info pages, prep, personalized-question fallback, full session completion, summary copy, saved-session search/filter/delete, practice-again from history, account retry, account export/delete, dropdown behavior, first-run account prompts, auth redirects, email login/profile refresh, and local-session migration after registration.
+Status: in progress. Legacy pages/claims removed, info pages added, contact feedback template added, local and server-side analytics added, backend rate limiting added, account navigation polished, prep setup compacted, account export/delete hardened, unused mock components/services/assets removed, mobile CSS pass started, empty/loading/error states improved, and Playwright desktop/mobile checks now cover landing, public info pages, prep, personalized-question fallback, full session completion, summary copy, saved-session search/filter/delete, practice-again from history, account retry, account export/delete, dropdown behavior, first-run account prompts, auth redirects, email login/profile refresh, and local-session migration after registration.
 
 Goal: make the app feel credible enough to share publicly.
 
@@ -166,7 +166,7 @@ Exit criteria:
 
 ## Milestone 6: Deployment
 
-Status: live. VisaCoach is deployed at `https://visacoach.kakugri.dev` on the Oracle Traefik stack. Backend health, MongoDB, Google login, and Gemini feedback are working in production. A non-AI production smoke script now checks the frontend shell and backend health routes without spending Gemini quota, and detailed health includes sanitized AI/quota runtime counters.
+Status: live. VisaCoach is deployed at `https://visacoach.kakugri.dev` on the Oracle Traefik stack. Backend health, MongoDB, Google login, and Gemini feedback are working in production. A non-AI production smoke script now checks the frontend shell and backend health routes without spending Gemini quota, and detailed health includes sanitized AI/quota and product analytics runtime counters.
 
 Goal: make VisaCoach available to real users.
 
@@ -197,6 +197,7 @@ Completed hardening:
 - Server-side account export endpoint returns sanitized profile data and saved sessions.
 - Repo-level production smoke test covers frontend, liveness, health, and prep tips without calling Gemini.
 - Detailed health reports Gemini model, quota cooldown state, and in-memory success/fallback counts without exposing secrets or applicant answers.
+- Server-side product analytics endpoint logs sanitized events and exposes aggregate in-memory counts in health.
 
 Remaining hardening:
 
@@ -266,5 +267,5 @@ Milestones 1 and 2 are implemented in the core no-login flow. Milestone 3 is now
 
 Immediate next build priorities:
 
-- Deploy the AI-runtime health/contact update and inspect `checks.ai` after one real practice session.
+- Deploy the AI-runtime health/contact/analytics update and inspect `checks.ai` plus `checks.analytics` after one real practice session.
 - Watch first real usage for Gemini quota pressure and account/session error rates.

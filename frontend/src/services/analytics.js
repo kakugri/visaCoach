@@ -1,5 +1,29 @@
+import { API_BASE_URL } from './apiConfig';
+
 const STORAGE_KEY = 'visaCoach:analyticsEvents';
 const MAX_EVENTS = 100;
+
+const sendRemoteEvent = (event) => {
+  const body = JSON.stringify(event);
+  const url = `${API_BASE_URL}/api/analytics/event`;
+
+  try {
+    if (navigator.sendBeacon) {
+      const blob = new Blob([body], { type: 'application/json' });
+      navigator.sendBeacon(url, blob);
+      return;
+    }
+  } catch (error) {
+    // Fall through to fetch; analytics should never interrupt the product flow.
+  }
+
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body,
+    keepalive: true,
+  }).catch(() => {});
+};
 
 export const trackEvent = (eventName, properties = {}) => {
   const event = {
@@ -16,6 +40,7 @@ export const trackEvent = (eventName, properties = {}) => {
     console.error('Unable to record analytics event:', error);
   }
 
+  sendRemoteEvent(event);
   return event;
 };
 

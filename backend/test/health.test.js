@@ -50,12 +50,19 @@ test('getHealthPayload includes sanitized AI runtime status', () => {
         lastQuotaAt: '2026-05-24T01:00:00.000Z',
       },
     },
+    analyticsStatus: {
+      totalEvents: 4,
+      eventsByName: { session_started: 2, session_completed: 1, summary_copied: 1 },
+      lastEventAt: '2026-05-24T02:00:00.000Z',
+    },
   });
 
   assert.equal(payload.checks.ai.geminiConfigured, true);
   assert.equal(payload.checks.ai.model, 'gemini-test-model');
   assert.equal(payload.checks.ai.quotaCooldown.active, false);
   assert.equal(payload.checks.ai.usageSinceStart.feedback.localFallback, 2);
+  assert.equal(payload.checks.analytics.totalEvents, 4);
+  assert.equal(payload.checks.analytics.eventsByName.session_started, 2);
 });
 
 test('getHealthPayload reports degraded when Mongo is configured but disconnected', () => {
