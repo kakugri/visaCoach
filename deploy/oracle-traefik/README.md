@@ -112,6 +112,16 @@ curl https://visa.yourdomain.com/health
 curl https://visa.yourdomain.com/api/health
 ```
 
+If `/api/health` returns the React HTML instead of JSON, Traefik is sending API paths to the frontend. Re-copy the latest `compose.yaml`, restart the VisaCoach containers, and inspect the backend router labels:
+
+```bash
+cd /opt/docker/apps/visacoach
+cp source/deploy/oracle-traefik/compose.yaml .
+cd /opt/docker
+docker compose --profile visacoach up -d --force-recreate visacoach-backend visacoach-frontend
+docker inspect visacoach-backend --format '{{json .Config.Labels}}'
+```
+
 ## Updates
 
 Pull source changes, rebuild, and restart:

@@ -17,11 +17,16 @@ services:
       - 5000
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.visacoach-api.rule=Host(`${VISACOACH_HOSTNAME?}`) && (PathPrefix(`/api`) || Path(`/health`))"
+      - "traefik.http.routers.visacoach-api.rule=Host(`${VISACOACH_HOSTNAME?}`) && PathPrefix(`/api`)"
       - "traefik.http.routers.visacoach-api.entrypoints=websecure"
       - "traefik.http.routers.visacoach-api.tls.certresolver=letsencrypt"
       - "traefik.http.routers.visacoach-api.priority=100"
       - "traefik.http.routers.visacoach-api.service=visacoach-api"
+      - "traefik.http.routers.visacoach-health.rule=Host(`${VISACOACH_HOSTNAME?}`) && Path(`/health`)"
+      - "traefik.http.routers.visacoach-health.entrypoints=websecure"
+      - "traefik.http.routers.visacoach-health.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.visacoach-health.priority=100"
+      - "traefik.http.routers.visacoach-health.service=visacoach-api"
       - "traefik.http.services.visacoach-api.loadbalancer.server.port=5000"
     healthcheck:
       test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:5000/health').then((res)=>process.exit(res.ok?0:1)).catch(()=>process.exit(1))\""]
