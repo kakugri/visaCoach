@@ -154,6 +154,59 @@ const hasPracticeProfileDetails = (practiceProfile = {}) => Boolean(
   practiceProfile.sessionContext?.notes
 );
 
+const PROFILE_COMPLETENESS_FIELDS = [
+  {
+    key: 'destinationCountry',
+    label: 'Destination',
+    getValue: (profile) => profile.destinationCountry,
+  },
+  {
+    key: 'visaType',
+    label: 'Visa type',
+    getValue: (profile) => profile.visaType,
+  },
+  {
+    key: 'homeCountry',
+    label: CONTEXT_FIELD_LABELS.homeCountry,
+    getValue: (profile) => profile.sessionContext?.homeCountry,
+  },
+  {
+    key: 'institutionOrHost',
+    label: CONTEXT_FIELD_LABELS.institutionOrHost,
+    getValue: (profile) => profile.sessionContext?.institutionOrHost,
+  },
+  {
+    key: 'programOrPurpose',
+    label: CONTEXT_FIELD_LABELS.programOrPurpose,
+    getValue: (profile) => profile.sessionContext?.programOrPurpose,
+  },
+  {
+    key: 'fundingSource',
+    label: CONTEXT_FIELD_LABELS.fundingSource,
+    getValue: (profile) => profile.sessionContext?.fundingSource,
+  },
+  {
+    key: 'returnPlan',
+    label: CONTEXT_FIELD_LABELS.returnPlan,
+    getValue: (profile) => profile.sessionContext?.returnPlan,
+  },
+];
+
+const getPracticeProfileCompleteness = (practiceProfile = {}) => {
+  const completed = PROFILE_COMPLETENESS_FIELDS.filter((field) => String(field.getValue(practiceProfile) || '').trim());
+  const missing = PROFILE_COMPLETENESS_FIELDS.filter((field) => !String(field.getValue(practiceProfile) || '').trim());
+  const percent = Math.round((completed.length / PROFILE_COMPLETENESS_FIELDS.length) * 100);
+
+  return {
+    completed,
+    missing,
+    percent,
+    completedCount: completed.length,
+    totalCount: PROFILE_COMPLETENESS_FIELDS.length,
+    label: missing.length ? `Add ${missing.length} more detail${missing.length === 1 ? '' : 's'}` : 'Ready for personalized practice',
+  };
+};
+
 const sessionMatchesSearch = (session, searchTerm) => {
   if (!searchTerm) return true;
   const questions = getSessionQuestions(session);
@@ -321,6 +374,7 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
     });
   }, [countryFilter, sessionSearch, sessionSort, sessions, visaFilter]);
 
+  const profileCompleteness = useMemo(() => getPracticeProfileCompleteness(practiceProfile), [practiceProfile]);
   const isSetupRoute = searchParams.get('setup') === '1';
   const hasSavedPracticeProfile = hasPracticeProfileDetails(userData?.practiceProfile);
   const shouldShowFirstRunPrompt = activeTab === 'profile' && !isLoading && !hasSavedPracticeProfile && (
@@ -605,6 +659,49 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
           <p className="section-subtitle">Saved defaults for your next interview setup.</p>
         </div>
         <button className="btn btn-primary" onClick={handleStartProfilePractice}>Start Practice</button>
+      </div>
+
+      <div className="practice-profile-summary" aria-label="Practice profile completeness">
+        <div className="profile-completeness-header">
+          <div>
+            <span className="profile-summary-kicker">Personalization</span>
+            <h4>{profileCompleteness.label}</h4>
+            <p>
+              These details prefill setup and help personalize your next question set and feedback.
+            </p>
+          </div>
+          <strong>{profileCompleteness.completedCount}/{profileCompleteness.totalCount}</strong>
+        </div>
+        <div
+          className="profile-completeness-bar"
+          role="progressbar"
+          aria-label="Practice profile completeness"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow={profileCompleteness.percent}
+        >
+          <span style={{ width: `${profileCompleteness.percent}%` }}></span>
+        </div>
+        <div className="profile-summary-lists">
+          <div>
+            <span>Will prefill</span>
+            <div className="profile-summary-chips">
+              {profileCompleteness.completed.map((field) => (
+                <span className="summary-chip ready" key={field.key}>{field.label}</span>
+              ))}
+            </div>
+          </div>
+          {profileCompleteness.missing.length > 0 && (
+            <div>
+              <span>Still useful to add</span>
+              <div className="profile-summary-chips">
+                {profileCompleteness.missing.map((field) => (
+                  <span className="summary-chip missing" key={field.key}>{field.label}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="practice-profile-form">

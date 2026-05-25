@@ -281,6 +281,101 @@
   font-size: 0.95rem;
 }
 
+.practice-profile-summary {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius-md);
+  background: #eff6ff;
+}
+
+.profile-completeness-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.profile-summary-kicker,
+.profile-summary-lists > div > span {
+  color: #1d4ed8;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.profile-completeness-header h4 {
+  margin: 0.15rem 0 0.25rem;
+  color: var(--text-dark);
+  font-size: 1.05rem;
+}
+
+.profile-completeness-header p {
+  margin: 0;
+  color: var(--text-medium);
+}
+
+.profile-completeness-header strong {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #1d4ed8;
+  padding: 0.35rem 0.65rem;
+}
+
+.profile-completeness-bar {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #dbeafe;
+}
+
+.profile-completeness-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2563eb, #0f766e);
+}
+
+.profile-summary-lists {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.profile-summary-lists > div {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.profile-summary-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.summary-chip {
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.3;
+  padding: 0.35rem 0.6rem;
+}
+
+.summary-chip.ready {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.summary-chip.missing {
+  background: #ffffff;
+  color: #475569;
+}
+
 .practice-profile-form,
 .practice-profile-controls {
   display: grid;
@@ -783,8 +878,13 @@
 
   .practice-profile-form,
   .practice-profile-controls,
-  .profile-concern-options {
+  .profile-concern-options,
+  .profile-summary-lists {
     grid-template-columns: 1fr;
+  }
+
+  .profile-completeness-header {
+    flex-direction: column;
   }
 
   .session-actions {

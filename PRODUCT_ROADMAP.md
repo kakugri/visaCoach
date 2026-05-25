@@ -310,7 +310,7 @@ Purpose: make saved profiles useful without slowing down no-login practice.
   - First-run profile prompt exists.
   - Registration can route users into setup.
   - Login returns users to the protected page they attempted to open.
-- M7.4 Profile usefulness polish: next.
+- M7.4 Profile usefulness polish: complete for current scope.
   - Show clearer saved-profile completeness state.
   - Make it obvious when a saved profile will prefill a practice session.
 - M7.5 Personalization quality loop: later.
@@ -326,7 +326,7 @@ Purpose: avoid premature sprawl while preparing the architecture for later inter
 
 Immediate next build priorities:
 
-- Start M7.4 profile usefulness polish.
+- Start M7.5 personalization quality loop.
 - Watch first real usage for Gemini quota pressure and account/session error rates.
 - Configure Uptime Kuma checks from `deploy/oracle-traefik/MONITORING.md`.
 - Rotate exposed Gemini keys at the end of the current build/deploy cycle.

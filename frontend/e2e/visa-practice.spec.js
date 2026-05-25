@@ -787,6 +787,9 @@ test('saves a practice profile and starts setup with saved defaults', async ({ p
 
   await page.goto('/profile');
   await expect(page.getByRole('heading', { name: 'Practice Profile' })).toBeVisible();
+  await expect(page.getByText('Ready for personalized practice')).toBeVisible();
+  await expect(page.getByText('These details prefill setup')).toBeVisible();
+  await expect(page.getByText('7/7')).toBeVisible();
 
   await page.getByLabel('Destination').selectOption('CA');
   await page.getByLabel('Visa type').selectOption('student');
@@ -871,6 +874,8 @@ test('guides new registrations into first practice setup', async ({ page }) => {
   await expect(page).toHaveURL(/\/profile\?setup=1$/);
   await expect(page.getByRole('heading', { name: 'Set your practice defaults' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Practice Profile' })).toBeVisible();
+  await expect(page.getByText('Add 5 more details')).toBeVisible();
+  await expect(page.getByText('2/7')).toBeVisible();
   expect(saveHistoryRequests).toHaveLength(0);
 
   await page.getByRole('button', { name: 'Start With Defaults' }).click();
