@@ -234,7 +234,6 @@ const buildAccountExport = (user, exportedAt = new Date().toISOString()) => {
     visaType: account.visaType,
     interviewDate: account.interviewDate,
     practiceProfile: account.practiceProfile,
-    subscriptionStatus: account.subscriptionStatus,
     lastLogin: account.lastLogin,
     createdAt: account.createdAt,
   };

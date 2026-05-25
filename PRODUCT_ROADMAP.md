@@ -100,7 +100,7 @@ Exit criteria:
 
 ## Milestone 4: Sessions And Accounts
 
-Status: complete for the current product scope. Authenticated history works, and the latest no-login session migrates into the account after signup/login.
+Status: complete for the current product scope. Authenticated history works, the latest no-login session migrates into the account after signup/login, and legacy premium/subscription artifacts have been removed from the account model/export surface.
 
 Goal: let users save and revisit practice without forcing login before first value.
 
@@ -133,7 +133,7 @@ Exit criteria:
 
 ## Milestone 5: UI And Launch Polish
 
-Status: in progress. Legacy pages/claims removed, info pages added, contact feedback template and post-session feedback CTA added, local and server-side analytics added, backend rate limiting added, account navigation polished, prep setup compacted, account export/delete hardened, unused mock components/services/assets removed, mobile CSS pass started, empty/loading/error states improved, and Playwright desktop/mobile checks now cover landing, public info pages, prep, personalized-question fallback, full session completion, summary copy, feedback CTA, saved-session search/filter/delete, practice-again from history, account retry, account export/delete, dropdown behavior, first-run account prompts, auth redirects, email login/profile refresh, and local-session migration after registration.
+Status: in progress. Legacy pages/claims removed, info pages added, contact feedback template and post-session feedback CTA added, local and server-side analytics added, backend rate limiting added, account navigation polished, prep setup compacted, account export/delete hardened, unused mock components/services/assets removed, mobile CSS pass started, empty/loading/error states improved, public MVP/premium wording removed, and Playwright desktop/mobile checks now cover landing, public info pages, prep, personalized-question fallback, full session completion, summary copy, feedback CTA, saved-session search/filter/delete, practice-again from history, account retry, account export/delete, dropdown behavior, first-run account prompts, auth redirects, email login/profile refresh, and local-session migration after registration.
 
 Goal: make the app feel credible enough to share publicly.
 
@@ -199,6 +199,7 @@ Completed hardening:
 - Detailed health reports Gemini model, quota cooldown state, and in-memory success/fallback counts without exposing secrets or applicant answers.
 - Server-side product analytics endpoint logs sanitized events and exposes aggregate in-memory counts in health.
 - Oracle monitoring runbook defines Uptime Kuma checks for frontend, liveness, health, and analytics status.
+- Production smoke passed against `https://visacoach.kakugri.dev` after deployment, including frontend shell, liveness, health, public prep tips, and analytics ingestion.
 
 Remaining hardening:
 
@@ -268,5 +269,7 @@ Milestones 1 and 2 are implemented in the core no-login flow. Milestone 3 is now
 
 Immediate next build priorities:
 
-- Deploy the latest analytics smoke/monitoring docs and inspect `checks.ai` plus `checks.analytics` after one real practice session.
+- Finish the launch-polish pass by tightening brand assets, metadata, and stale prototype wording.
 - Watch first real usage for Gemini quota pressure and account/session error rates.
+- Configure Uptime Kuma checks from `deploy/oracle-traefik/MONITORING.md`.
+- Rotate exposed Gemini keys at the end of the current build/deploy cycle.

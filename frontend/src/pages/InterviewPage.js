@@ -106,7 +106,7 @@ function InterviewPage() {
             <span className="logo-text">VisaCoach</span>
           </div>
           <div className="header-actions">
-            <span className="mvp-badge">Practice MVP</span>
+            <span className="beta-badge">Public Beta</span>
             {isLoggedIn ? (
               <button className="btn btn-outline" onClick={() => navigate('/history')}>
                 {user?.name ? 'Saved Sessions' : 'My Sessions'}
@@ -258,7 +258,7 @@ function InterviewPage() {
               </div>
               
               <div className="testimonials-section">
-                <h3 className="testimonials-title">MVP Focus</h3>
+                <h3 className="testimonials-title">Built for Practice</h3>
                 <div className="testimonials-container">
                   <div className="testimonial-card">
                     <div className="testimonial-content">

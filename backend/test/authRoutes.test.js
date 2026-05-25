@@ -32,6 +32,7 @@ test('buildAccountExport returns safe profile fields and saved sessions', () => 
   assert.equal(exportPayload.profile.email, 'export@example.com');
   assert.equal(exportPayload.profile.name, 'Export User');
   assert.equal(exportPayload.profile.practiceProfile.destinationCountry, 'US');
+  assert.equal(exportPayload.profile.subscriptionStatus, undefined);
   assert.equal(exportPayload.profile.password, undefined);
   assert.equal(exportPayload.profile.__v, undefined);
   assert.equal(exportPayload.sessionCount, 1);

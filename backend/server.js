@@ -116,7 +116,7 @@ app.get(['/health', '/api/health'], (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  res.send('Visa Prep Backend MVP is running!');
+  res.send('VisaCoach backend is running.');
 });
 
 app.use(createNotFoundHandler());

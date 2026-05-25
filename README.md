@@ -1,6 +1,6 @@
 # VisaCoach
 
-VisaCoach is a small visa-interview practice MVP. The current product goal is simple:
+VisaCoach is a focused visa-interview practice app. The current product goal is simple:
 
 ```text
 choose country and visa type -> answer five practice questions -> get feedback -> copy/save a session summary
@@ -31,7 +31,7 @@ VisaCoach is a practice tool. It is not legal advice, does not replace official 
 - Frontend: React, React Router, Axios, Create React App.
 - Backend: Node.js, Express, MongoDB/Mongoose, JWT auth, optional Google OAuth, optional Gemini feedback.
 
-## Quick Start: Frontend MVP
+## Quick Start: Frontend
 
 Create `frontend/.env` with:
 
@@ -99,5 +99,5 @@ For production setup, environment variables, health checks, and the Oracle Traef
 ## Near-Term Roadmap
 
 - Add interview modes after the visa flow proves useful: job, school, founder, and grant/pitch interviews.
-- Add frontend tests around live login, profile refresh, and authenticated history errors.
-- Deploy the first public build to the Oracle Traefik stack.
+- Monitor first public usage for quota pressure, account/session errors, and confusing setup steps.
+- Configure production uptime checks from the Oracle Traefik monitoring runbook.

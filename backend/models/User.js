@@ -33,7 +33,6 @@ const userSchema = new mongoose.Schema({
     feedbackLevel: { type: String },
     updatedAt: { type: Date },
   },
-  subscriptionStatus: { type: String, default: 'free' }, // free, basic, pro, premium
   interviewHistory: [{ // Interview history
     sessionId: { type: String },
     date: { type: Date, default: Date.now },
