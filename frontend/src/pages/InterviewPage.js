@@ -1,7 +1,7 @@
 /* InterviewPage.js */
 
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import CountrySelect from '../components/CountrySelect';
 import InterviewScreen from '../components/InterviewScreen';
 import logoSymbol from '../assets/images/logo-symbol.svg';
@@ -320,10 +320,10 @@ function InterviewPage() {
               <span className="footer-logo-text">VisaCoach</span>
             </div>
             <div className="footer-links">
-              <a href="/about">About</a>
-              <a href="/privacy">Privacy Policy</a>
-              <a href="/terms">Terms of Service</a>
-              <a href="/contact">Contact Us</a>
+              <Link to="/about">About</Link>
+              <Link to="/privacy">Privacy Policy</Link>
+              <Link to="/terms">Terms of Service</Link>
+              <Link to="/contact">Contact Us</Link>
             </div>
           </div>
           <p className="copyright">VisaCoach is a practice tool. It is not legal advice and does not guarantee an application outcome.</p>

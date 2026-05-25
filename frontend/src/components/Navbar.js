@@ -82,7 +82,7 @@ const Navbar = () => {
           ) : (
             <div className="auth-buttons">
               <Link to="/login" className="btn btn-outline">Sign In</Link>
-              <Link to="/register" className="btn btn-primary">Register</Link>
+              <Link to="/register" className="btn btn-primary">Create Profile</Link>
             </div>
           )}
         </nav>
