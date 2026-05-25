@@ -358,3 +358,4 @@ Immediate next build priorities:
 - Follow `BETA_LEARNING_PLAN.md` for the first public beta review cycle.
 - Watch beta usage for account/session errors, confusing setup steps, and whether personalized questions outperform the static question bank.
 - Use early feedback to decide whether to deepen visa practice or begin M8 mode-architecture planning.
+- Choose one concrete next build from `NEXT_BUILD_CANDIDATES.md` after the first tester batch.

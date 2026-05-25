@@ -53,6 +53,8 @@ For each tester, record:
 - top requested improvement
 - whether they asked for a non-visa mode
 
+Use [BETA_FEEDBACK_LOG.md](./BETA_FEEDBACK_LOG.md) as the shared internal template.
+
 ## Suggested Outreach Copy
 
 ```text

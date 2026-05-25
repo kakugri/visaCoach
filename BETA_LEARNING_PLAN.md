@@ -63,8 +63,11 @@ Qualitative feedback:
 - Did anyone ask for job, school, or founder interview modes unprompted?
 
 Use [BETA_TESTING_GUIDE.md](./BETA_TESTING_GUIDE.md) when recruiting early testers so feedback is consistent.
+Record results in [BETA_FEEDBACK_LOG.md](./BETA_FEEDBACK_LOG.md) so product decisions are based on the same evidence each week.
 
 ## Decision Gates
+
+Use the rubric in [BETA_FEEDBACK_LOG.md](./BETA_FEEDBACK_LOG.md) before committing to a larger build direction.
 
 Deepen visa coaching if:
 
@@ -102,3 +105,5 @@ Expansion candidates:
 - Founder or pitch practice mode.
 
 The default next bet is deeper visa coaching unless beta users pull strongly toward another mode.
+
+Use [NEXT_BUILD_CANDIDATES.md](./NEXT_BUILD_CANDIDATES.md) to pick the first post-beta build slice after reviewing tester evidence.

@@ -96,7 +96,7 @@ The backend runs at `http://localhost:5000`.
 
 For production setup, environment variables, health checks, and the Oracle Traefik deployment bundle, see [DEPLOYMENT.md](./DEPLOYMENT.md).
 
-For the public beta review cadence and decision gates, see [BETA_LEARNING_PLAN.md](./BETA_LEARNING_PLAN.md). For tester instructions and outreach copy, see [BETA_TESTING_GUIDE.md](./BETA_TESTING_GUIDE.md).
+For the public beta review cadence and decision gates, see [BETA_LEARNING_PLAN.md](./BETA_LEARNING_PLAN.md). For tester instructions and outreach copy, see [BETA_TESTING_GUIDE.md](./BETA_TESTING_GUIDE.md). To track tester evidence, use [BETA_FEEDBACK_LOG.md](./BETA_FEEDBACK_LOG.md).
 
 To check production liveness, runtime health, and analytics counters without spending Gemini quota:
 
