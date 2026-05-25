@@ -3,6 +3,11 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { UserContext } from '../App';
 import logoSymbol from '../assets/images/logo-symbol.svg';
 import { API_BASE_URL } from '../services/apiConfig';
+import {
+  getEffectiveAnswer,
+  getFactConsistencyInsights,
+  getProgressInsights,
+} from '../utils/practiceInsights.js';
 import './ProfilePage.css';
 
 const formatDate = (value) => {
@@ -28,7 +33,9 @@ const CONTEXT_FIELD_LABELS = {
   institutionOrHost: 'School, employer, host, or program',
   programOrPurpose: 'Program, role, or trip purpose',
   fundingSource: 'Funding source',
+  sponsorDetails: 'Sponsor or financial evidence',
   returnPlan: 'Return plan or home ties',
+  importantDates: 'Important dates or timeline',
   notes: 'Application notes',
 };
 
@@ -108,7 +115,9 @@ const DEFAULT_PRACTICE_PROFILE = {
     institutionOrHost: '',
     programOrPurpose: '',
     fundingSource: '',
+    sponsorDetails: '',
     returnPlan: '',
+    importantDates: '',
     notes: '',
   },
   confidence: {
@@ -150,7 +159,9 @@ const hasPracticeProfileDetails = (practiceProfile = {}) => Boolean(
   practiceProfile.sessionContext?.institutionOrHost ||
   practiceProfile.sessionContext?.programOrPurpose ||
   practiceProfile.sessionContext?.fundingSource ||
+  practiceProfile.sessionContext?.sponsorDetails ||
   practiceProfile.sessionContext?.returnPlan ||
+  practiceProfile.sessionContext?.importantDates ||
   practiceProfile.sessionContext?.notes
 );
 
@@ -214,7 +225,15 @@ const sessionMatchesSearch = (session, searchTerm) => {
     session.country,
     session.visaType,
     ...Object.values(session.sessionContext || {}),
-    ...questions.flatMap((item) => [item.question, item.answer, item.userResponse, item.feedback, item.agentResponse]),
+    ...questions.flatMap((item) => [
+      item.question,
+      item.answer,
+      item.userResponse,
+      item.revisedAnswer,
+      item.revisedResponse,
+      item.feedback,
+      item.agentResponse,
+    ]),
   ].filter(Boolean).join(' ').toLowerCase();
 
   return searchable.includes(searchTerm.toLowerCase());
@@ -226,6 +245,11 @@ const buildSessionSummary = (session) => {
   const contextLines = Object.entries(context)
     .filter(([, value]) => value)
     .map(([key, value]) => `- ${key}: ${value}`);
+  const consistencyInsights = getFactConsistencyInsights({
+    sessionContext: context,
+    conversationHistory: questions,
+  });
+  const revisionCount = questions.filter((item) => item.revisedAnswer || item.revisedResponse).length;
 
   return [
     'VisaCoach Saved Session',
@@ -234,19 +258,32 @@ const buildSessionSummary = (session) => {
     `Visa type: ${session.visaType || 'N/A'}`,
     `Practice readiness: ${getSessionScore(session)}%`,
     session.confidence ? `Confidence: ${session.confidence.before || 'N/A'}/10 to ${session.confidence.after || 'N/A'}/10` : '',
+    `Revised answers: ${revisionCount}`,
     contextLines.length ? '\nContext:' : '',
     ...contextLines,
     '\nStrengths:',
     ...getSessionStrengths(session).map((item) => `- ${item}`),
     '\nFocus areas:',
     ...getSessionImprovements(session).map((item) => `- ${item}`),
+    '\nConsistency prep:',
+    ...(consistencyInsights.gaps.length
+      ? consistencyInsights.gaps.map((field) => `- Gap: ${field.gap}`)
+      : ['- No obvious prepared-fact gaps from this session.']),
     '\nAnswers:',
-    ...questions.flatMap((item, index) => [
-      `${index + 1}. ${item.question}`,
-      `Answer: ${item.answer || item.userResponse || 'No answer saved.'}`,
-      `Feedback: ${item.feedback || item.agentResponse || 'No feedback saved.'}`,
-      '',
-    ]),
+    ...questions.flatMap((item, index) => {
+      const answerLines = [
+        `${index + 1}. ${item.question}`,
+        `Answer: ${item.answer || item.userResponse || 'No answer saved.'}`,
+      ];
+
+      if (item.revisedAnswer || item.revisedResponse) {
+        answerLines.push(`Revised answer: ${getEffectiveAnswer(item)}`);
+      }
+
+      answerLines.push(`Feedback: ${item.feedback || item.agentResponse || 'No feedback saved.'}`);
+      answerLines.push('');
+      return answerLines;
+    }),
     'Note: This is practice support only. It is not legal advice and does not predict or guarantee a visa decision.',
   ].filter(Boolean).join('\n');
 };
@@ -354,6 +391,8 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
       questionsAnswered: sessions.reduce((sum, session) => sum + getSessionQuestions(session).length, 0),
     };
   }, [sessions]);
+
+  const progressInsights = useMemo(() => getProgressInsights(sessions), [sessions]);
 
   const filterOptions = useMemo(() => ({
     countries: [...new Set(sessions.map((session) => session.country).filter(Boolean))].sort(),
@@ -772,6 +811,16 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
           />
         </label>
 
+        <label>
+          <span>{CONTEXT_FIELD_LABELS.sponsorDetails}</span>
+          <input
+            type="text"
+            value={practiceProfile.sessionContext.sponsorDetails}
+            onChange={(event) => handlePracticeProfileContextChange('sponsorDetails', event.target.value)}
+            placeholder="Parent sponsor, bank statements, scholarship letter"
+          />
+        </label>
+
         <label className="profile-field-wide">
           <span>{CONTEXT_FIELD_LABELS.returnPlan}</span>
           <input
@@ -779,6 +828,16 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
             value={practiceProfile.sessionContext.returnPlan}
             onChange={(event) => handlePracticeProfileContextChange('returnPlan', event.target.value)}
             placeholder="Job, family, business, property, or career plan at home"
+          />
+        </label>
+
+        <label className="profile-field-wide">
+          <span>{CONTEXT_FIELD_LABELS.importantDates}</span>
+          <input
+            type="text"
+            value={practiceProfile.sessionContext.importantDates}
+            onChange={(event) => handlePracticeProfileContextChange('importantDates', event.target.value)}
+            placeholder="Program start date, trip duration, expected return timeline"
           />
         </label>
 
@@ -849,6 +908,75 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
     </div>
   );
 
+  const renderProgressDashboard = () => {
+    const feedbackSources = Object.entries(progressInsights.feedbackSourceCounts);
+    const questionSources = Object.entries(progressInsights.questionSourceCounts);
+
+    return (
+      <section className="progress-dashboard">
+        <div className="section-heading">
+          <div>
+            <h3>Progress</h3>
+            <p className="section-subtitle">Signals from saved sessions, not a visa outcome prediction.</p>
+          </div>
+        </div>
+
+        <div className="progress-grid">
+          <div className="progress-card">
+            <span>Average readiness</span>
+            <strong>{progressInsights.averageScore || stats.averageScore}%</strong>
+            <p>Across {stats.totalSessions} saved session{stats.totalSessions === 1 ? '' : 's'}.</p>
+          </div>
+          <div className="progress-card">
+            <span>Confidence change</span>
+            <strong>{progressInsights.averageConfidenceDelta > 0 ? '+' : ''}{progressInsights.averageConfidenceDelta}</strong>
+            <p>Average before-to-after self assessment.</p>
+          </div>
+          <div className="progress-card">
+            <span>Revisions saved</span>
+            <strong>{progressInsights.totalRevisions}</strong>
+            <p>{progressInsights.sessionsWithRevisions} session{progressInsights.sessionsWithRevisions === 1 ? '' : 's'} include revised answers.</p>
+          </div>
+        </div>
+
+        <div className="progress-detail-grid">
+          <div className="progress-detail-card">
+            <h4>Recurring Focus Areas</h4>
+            {progressInsights.recurringImprovements.length ? (
+              <ul>
+                {progressInsights.recurringImprovements.map((item) => (
+                  <li key={item.label}>
+                    <span>{item.label}</span>
+                    <strong>{item.count}</strong>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>No recurring focus areas yet. Complete more saved sessions to see patterns.</p>
+            )}
+          </div>
+          <div className="progress-detail-card">
+            <h4>Source History</h4>
+            <div className="source-history">
+              <div>
+                <span>Feedback</span>
+                {feedbackSources.length ? feedbackSources.map(([source, count]) => (
+                  <p key={source}>{source}: {count}</p>
+                )) : <p>No feedback saved yet.</p>}
+              </div>
+              <div>
+                <span>Questions</span>
+                {questionSources.length ? questionSources.map(([source, count]) => (
+                  <p key={source}>{source}: {count}</p>
+                )) : <p>No question-source data yet.</p>}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  };
+
   const renderProfile = () => (
     <section className="profile-info">
       <div className="profile-header">
@@ -881,6 +1009,8 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
           <span className="stat-label">Answers Saved</span>
         </div>
       </div>
+
+      {renderProgressDashboard()}
 
       <div className="profile-details">
         <h3>Account</h3>
@@ -960,6 +1090,11 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
                 const questions = getSessionQuestions(session);
                 const strengths = getSessionStrengths(session);
                 const improvements = getSessionImprovements(session);
+                const revisionCount = questions.filter((item) => item.revisedAnswer || item.revisedResponse).length;
+                const consistency = getFactConsistencyInsights({
+                  sessionContext: session.sessionContext || {},
+                  conversationHistory: questions,
+                });
 
                 return (
                   <article className="saved-session-card" key={session._id || index}>
@@ -990,6 +1125,14 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
                           <p>{session.confidence.before || 'N/A'}/10 to {session.confidence.after || 'N/A'}/10</p>
                         </div>
                       )}
+                      <div>
+                        <span>Revisions</span>
+                        <p>{revisionCount} answer{revisionCount === 1 ? '' : 's'}</p>
+                      </div>
+                      <div>
+                        <span>Fact coverage</span>
+                        <p>{consistency.preparedFacts.length ? `${consistency.coveredFacts.length}/${consistency.preparedFacts.length} prepared facts` : 'No facts prepared'}</p>
+                      </div>
                     </div>
 
                     <div className="session-insights">
@@ -1017,6 +1160,12 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
                         <div className="session-answer" key={`${item.question}-${questionIndex}`}>
                           <strong>{item.question}</strong>
                           <p>{item.answer || item.userResponse || 'No answer saved.'}</p>
+                          {(item.revisedAnswer || item.revisedResponse) && (
+                            <div className="session-revised-answer">
+                              <span>Revised answer</span>
+                              <p>{getEffectiveAnswer(item)}</p>
+                            </div>
+                          )}
                           <small>{item.feedback || item.agentResponse || 'No feedback saved.'}</small>
                         </div>
                       ))}

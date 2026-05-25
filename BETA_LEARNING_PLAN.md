@@ -94,9 +94,11 @@ Do not expand yet if:
 Visa-depth candidates:
 
 - Stricter officer mode for F1/B1-B2.
-- Answer rewrite practice after each feedback item.
+- Answer rewrite practice after feedback.
 - Document consistency checklist tied to answers.
 - Session comparison over time.
+
+First slices of these visa-depth bets are now in the product: one optional revised answer per session, profile progress signals, optional sponsor/timeline facts, summary consistency gaps, and stricter realistic-mode follow-ups. The next beta review should decide which one deserves deeper iteration.
 
 Expansion candidates:
 
@@ -104,6 +106,6 @@ Expansion candidates:
 - School/admissions interview mode.
 - Founder or pitch practice mode.
 
-The default next bet is the V1 answer revision loop, followed by progress visibility and then visa fact consistency. M8/job interviews remain deferred unless beta users pull strongly toward another mode.
+The default next bet is now refinement of whichever V1-V4 feature gets the strongest live signal. M8/job interviews remain deferred unless beta users pull strongly toward another mode.
 
 Use [NEXT_BUILD_CANDIDATES.md](./NEXT_BUILD_CANDIDATES.md) to pick the first post-beta build slice after reviewing tester evidence.

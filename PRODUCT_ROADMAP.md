@@ -345,24 +345,33 @@ Purpose: learn from real usage before adding scope.
 
 Purpose: make VisaCoach meaningfully better for visa users before broadening into generic interviews.
 
-- V1 Answer Revision Loop: next.
+- V1 Answer Revision Loop: first slice complete.
   - Let users revise one answer after feedback.
   - Compare original vs revised answer.
   - Save both versions in the session summary/history.
   - Keep the loop optional so first-use practice remains fast.
-- V2 Progress Dashboard: next after V1.
+- V2 Progress Dashboard: first slice complete.
   - Show confidence trends across saved sessions.
   - Show recurring improvement areas.
   - Show question-source and feedback-source history.
   - Avoid overemphasizing fake precision in readiness scores.
-- V3 Visa Fact Consistency Prep: next after V1/V2.
+- V3 Visa Fact Consistency Prep: first slice complete.
   - Add structured fact sheet fields, not document uploads.
   - Use facts to flag answer consistency gaps.
   - Keep legal/outcome boundaries visible.
-- V4 Stricter Officer Mode: later.
+- V4 Stricter Officer Mode: first slice complete.
   - Make realistic mode more like a real officer exchange.
   - Use short follow-ups and less coaching during the interview.
   - Provide coaching after the exchange.
+
+Completed V1-V4 first-slice work:
+
+- The interview flow now allows one optional answer revision after feedback, pauses auto-advance while revising, compares original vs revised answer, and saves both versions.
+- Session summaries and saved-session history include revised answers and revision notes.
+- The profile page includes a progress dashboard with average readiness, confidence change, recurring focus areas, revision count, and feedback/question source history.
+- Intake now includes optional sponsor/evidence and timeline facts for consistency preparation.
+- Final summaries and saved session copies include prepared-fact consistency gaps.
+- Realistic feedback mode now uses a stricter officer-style prompt and a stricter local fallback for vague answers.
 
 ### M8.x: Expansion Beyond Visa Interviews
 
@@ -379,7 +388,7 @@ Purpose: avoid premature sprawl while preparing the architecture for later inter
 Immediate next build priorities:
 
 - Follow `BETA_LEARNING_PLAN.md` for the first public beta review cycle.
-- Start V1 Answer Revision Loop.
-- Use feedback to tune whether V2 Progress Dashboard or V3 Visa Fact Consistency Prep follows next.
+- Reevaluate V1-V4 after live usage and decide whether to deepen one of them or pause for beta feedback.
+- Use feedback to tune whether progress, consistency prep, or stricter officer mode needs the next refinement.
 - Keep M8 deferred unless repeated user feedback asks for non-visa modes.
 - Choose one concrete next build from `NEXT_BUILD_CANDIDATES.md` after the first tester batch.

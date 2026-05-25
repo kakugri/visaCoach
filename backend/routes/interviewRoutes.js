@@ -89,6 +89,9 @@ router.post('/save-history', authMiddleware, async (req, res) => {
     const simplifiedHistory = interviewHistory.map(item => ({
       question: item.question,
       answer: item.userResponse,
+      revisedAnswer: item.revisedResponse,
+      revisionComparison: item.revisionComparison,
+      revisionSavedAt: item.revisionSavedAt,
       feedback: item.agentResponse,
       feedbackDetails: item.feedback,
       feedbackSource: item.feedbackSource,

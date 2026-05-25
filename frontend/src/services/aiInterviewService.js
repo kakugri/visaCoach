@@ -34,6 +34,8 @@ const getLocalFeedback = (question, userAnswer, country, visaType, sessionContex
 
   if (/(fund|sponsor|scholarship|salary|savings|bank|tuition|employer|company)/.test(lowerAnswer)) {
     notes.push('You mention support or resources; be ready to match this with documents.');
+  } else if (context.sponsorDetails) {
+    notes.push(`Tie your answer back to the sponsor or evidence you prepared: ${context.sponsorDetails}.`);
   } else if (context.fundingSource) {
     notes.push(`Tie your answer back to your funding source: ${context.fundingSource}.`);
   } else if (/fund|finance|pay|support|sponsor|expense/.test(question.toLowerCase())) {
@@ -46,6 +48,10 @@ const getLocalFeedback = (question, userAnswer, country, visaType, sessionContex
     notes.push(`Connect this answer to your return plan or home ties: ${context.returnPlan}.`);
   } else if (/ties|return|after|plans/.test(question.toLowerCase())) {
     notes.push('Add specific ties or post-visit plans to make the return story clearer.');
+  }
+
+  if (context.importantDates && !/(\d{4}|january|february|march|april|may|june|july|august|september|october|november|december|semester|week|month|year)/i.test(answer)) {
+    notes.push(`Keep your timeline consistent with: ${context.importantDates}.`);
   }
 
   const feedback = {
@@ -104,8 +110,14 @@ export const aiInterviewService = {
   },
 
   async getAgentResponse(question, userAnswer, country, visaType, feedbackStyle = 'detailed', sessionContext = {}) {
+    const wordCount = userAnswer.trim().split(/\s+/).filter(Boolean).length;
     const localText = feedbackStyle === 'realistic'
-      ? { text: 'Thank you. Please be ready to explain that with one concrete detail if asked.', feedback: null }
+      ? {
+          text: wordCount < 18
+            ? 'Please be more specific. What concrete fact supports that answer?'
+            : 'Thank you. Be ready to support that with matching facts if asked.',
+          feedback: null,
+        }
       : getLocalFeedback(question, userAnswer, country, visaType, sessionContext);
 
     try {

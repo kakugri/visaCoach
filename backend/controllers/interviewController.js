@@ -63,7 +63,9 @@ const CONTEXT_LABELS = {
   institutionOrHost: "school/employer/host/program",
   programOrPurpose: "program/role/trip purpose",
   fundingSource: "funding source",
+  sponsorDetails: "sponsor or financial evidence",
   returnPlan: "return plan/home ties",
+  importantDates: "important dates/timeline",
   notes: "application notes",
 };
 
@@ -245,8 +247,14 @@ const buildLocalQuestions = ({ country, visaType, sessionContext = {} }) => {
     context.fundingSource
       ? `How will ${context.fundingSource} cover the costs connected to this visa?`
       : "",
+    context.sponsorDetails
+      ? `What evidence supports ${context.sponsorDetails}, and how would you explain it clearly?`
+      : "",
     context.returnPlan
       ? `How does this visa support your plan to ${context.returnPlan}?`
+      : "",
+    context.importantDates
+      ? `How does your timeline around ${context.importantDates} fit the visa period?`
       : "",
   ];
 
@@ -347,8 +355,12 @@ const getAiRuntimeStatus = (now = Date.now()) => {
 
 const buildFallbackResponse = ({ body, isRealistic = false, reason = "error", retryAfterSeconds = 0 }) => {
   if (isRealistic) {
+    const answerWords = normalizeString(body.userAnswer).split(/\s+/).filter(Boolean).length;
+
     return {
-      response: "Thank you. Please be ready to explain that with one concrete detail if asked.",
+      response: answerWords < 18
+        ? "Please be more specific. What concrete fact supports that answer?"
+        : "Thank you. Be ready to support that with matching facts if asked.",
       source: "local",
       sourceReason: reason,
       retryAfterSeconds,
@@ -421,10 +433,12 @@ ${contextBlock}
 Respond as the officer would in the moment.
 
 Rules:
-- Keep the response under 35 words.
+- Keep the response under 28 words.
 - Do not provide coaching, scoring, or a long explanation.
-- If the answer is too vague, ask one concise follow-up question.
-- If the answer is adequate, acknowledge it and move on naturally.
+- Be stricter for vague, unsupported, or inconsistent answers.
+- If the answer is too vague, ask one direct follow-up question that requests a concrete fact.
+- If the answer is adequate, acknowledge it briefly and move on naturally.
+- Do not praise an answer unless it clearly answers the question with a specific fact.
 - Do not predict or guarantee any visa outcome.`;
   }
 

@@ -53,7 +53,9 @@ test('buildAgentPrompt uses the F1 profile and context in detailed mode', () => 
         homeCountry: 'Ghana',
         institutionOrHost: 'University of Texas',
         fundingSource: 'family sponsor',
+        sponsorDetails: 'father bank statement',
         returnPlan: 'work in Ghana',
+        importantDates: 'August 2026 start',
       },
     },
   });
@@ -61,6 +63,8 @@ test('buildAgentPrompt uses the F1 profile and context in detailed mode', () => 
   assert.match(prompt, /F1 student visa/);
   assert.match(prompt, /study plan, school\/program fit, funding/);
   assert.match(prompt, /home country\/current residence: Ghana/);
+  assert.match(prompt, /sponsor or financial evidence: father bank statement/);
+  assert.match(prompt, /important dates\/timeline: August 2026 start/);
   assert.match(prompt, /Return only valid JSON/);
 });
 
@@ -75,6 +79,8 @@ test('buildAgentPrompt keeps realistic mode officer-style', () => {
 
   assert.match(prompt, /B1\/B2 visitor or business visa/);
   assert.match(prompt, /Respond as the officer would/);
+  assert.match(prompt, /Be stricter for vague/);
+  assert.match(prompt, /under 28 words/);
   assert.doesNotMatch(prompt, /Return only valid JSON/);
 });
 

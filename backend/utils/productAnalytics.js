@@ -16,6 +16,8 @@ const ALLOWED_PROPERTY_KEYS = new Set([
   'questionsAnswered',
   'readinessScore',
   'restarted',
+  'revisionCount',
+  'revisionWordDelta',
   'visaType',
 ]);
 

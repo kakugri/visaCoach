@@ -160,6 +160,45 @@
   flex-direction: row-reverse;
 }
 
+.revision-summary {
+  width: calc(100% - 56px);
+  margin-left: auto;
+  padding: 14px 16px;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  background-color: #eff6ff;
+  color: #1e3a8a;
+}
+
+.revision-summary-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.revision-summary-header span,
+.revision-summary-header small {
+  color: #1d4ed8;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.revision-summary p {
+  margin: 0;
+  color: #1e3a8a;
+  line-height: 1.55;
+}
+
+.revision-summary ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: #475569;
+  line-height: 1.45;
+  font-size: 0.9rem;
+}
+
 .avatar {
   width: 42px;
   height: 42px;
@@ -427,6 +466,126 @@
   color: #64748b;
   font-size: 0.9rem;
   font-weight: 700;
+}
+
+.feedback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.revise-button {
+  padding: 12px 18px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  cursor: pointer;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.revise-button:hover {
+  background-color: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.revision-panel {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  background-color: #f8fbff;
+}
+
+.revision-panel-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.revision-kicker {
+  display: block;
+  margin-bottom: 4px;
+  color: #2563eb;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.revision-panel h4 {
+  margin: 0;
+  color: #1e293b;
+  font-size: 1rem;
+}
+
+.revision-cancel-button {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background-color: #ffffff;
+  color: #475569;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 9px 12px;
+}
+
+.revision-original {
+  padding: 12px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  background-color: #ffffff;
+}
+
+.revision-original span {
+  display: block;
+  margin-bottom: 6px;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.revision-original p {
+  margin: 0;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.revision-input {
+  width: 100%;
+  min-height: 110px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 13px 14px;
+  color: #1e293b;
+  font: inherit;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.revision-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+}
+
+.revision-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.revision-message {
+  margin: 0;
+  color: #166534;
+  font-weight: 700;
+}
+
+.revision-message.error {
+  color: #b91c1c;
 }
 
 @keyframes shake {
@@ -1009,6 +1168,57 @@
   gap: 20px;
 }
 
+.consistency-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 0.8fr);
+  gap: 16px;
+  align-items: start;
+  margin-top: 22px;
+  padding-top: 22px;
+  border-top: 1px solid #e2e8f0;
+  text-align: left;
+}
+
+.consistency-summary h4 {
+  margin: 0 0 6px;
+  color: #1e293b;
+}
+
+.consistency-summary p {
+  margin: 0;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.consistency-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.consistency-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.consistency-chip.gap {
+  background-color: #fff7ed;
+  color: #9a3412;
+  border: 1px solid #fed7aa;
+}
+
+.consistency-chip.ready {
+  background-color: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
 .summary-section h4 {
   margin-top: 0;
   margin-bottom: 16px;
@@ -1189,8 +1399,13 @@
     flex-direction: column;
     width: 100%;
   }
+
+  .feedback-actions,
+  .revision-panel-actions {
+    width: 100%;
+  }
   
-  .submit-button, .next-button {
+  .submit-button, .next-button, .revise-button {
     width: 100%;
   }
   
@@ -1218,6 +1433,7 @@
 
   .context-grid,
   .confidence-comparison,
+  .consistency-summary,
   .structured-feedback-row {
     grid-template-columns: 1fr;
   }
@@ -1272,6 +1488,17 @@
     max-width: calc(100% - 48px);
     padding: 12px;
     border-radius: 10px;
+  }
+
+  .revision-summary {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .revision-panel-heading,
+  .revision-summary-header {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .avatar {

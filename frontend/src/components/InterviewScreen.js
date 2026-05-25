@@ -7,16 +7,23 @@ import {
   CONTEXT_FIELD_LABELS,
   getStructuredFeedbackRows,
 } from '../utils/interviewSummary.js';
+import {
+  buildRevisionComparison,
+  getEffectiveAnswer,
+  getFactConsistencyInsights,
+} from '../utils/practiceInsights.js';
 import './InterviewScreen.css';
 
 const SESSION_QUESTION_LIMIT = 5;
-const AUTO_ADVANCE_DELAY_MS = 900;
+const AUTO_ADVANCE_DELAY_MS = 2200;
 const DEFAULT_SESSION_CONTEXT = {
   homeCountry: '',
   institutionOrHost: '',
   programOrPurpose: '',
   fundingSource: '',
+  sponsorDetails: '',
   returnPlan: '',
+  importantDates: '',
   notes: '',
 };
 
@@ -110,7 +117,7 @@ const getQuestionSetNotice = (questionSetMeta) => {
 };
 
 const countFilledContextFields = (context = {}) => (
-  ['homeCountry', 'institutionOrHost', 'programOrPurpose', 'fundingSource', 'returnPlan', 'notes']
+  ['homeCountry', 'institutionOrHost', 'programOrPurpose', 'fundingSource', 'sponsorDetails', 'returnPlan', 'importantDates', 'notes']
     .filter((field) => String(context[field] || '').trim()).length
 );
 
@@ -151,6 +158,10 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
   const [showAnimation, setShowAnimation] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [sessionId, setSessionId] = useState('');
+  const [revisionDraft, setRevisionDraft] = useState('');
+  const [revisionItemIndex, setRevisionItemIndex] = useState(null);
+  const [revisionUsed, setRevisionUsed] = useState(false);
+  const [revisionMessage, setRevisionMessage] = useState('');
   
   const conversationEndRef = useRef(null);
   const textAreaRef = useRef(null);
@@ -326,12 +337,26 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
     setAgentResponse('');
   };
 
+  const clearAutoAdvanceTimer = () => {
+    if (autoAdvanceTimerRef.current) {
+      clearTimeout(autoAdvanceTimerRef.current);
+      autoAdvanceTimerRef.current = null;
+    }
+  };
+
+  const resetRevisionState = () => {
+    setRevisionDraft('');
+    setRevisionItemIndex(null);
+    setRevisionMessage('');
+  };
+
   const calculateInterviewStats = (history, context = sessionContext) => {
-    const answers = history.map(item => item.userResponse || '');
+    const answers = history.map(item => getEffectiveAnswer(item));
     const combinedAnswers = answers.join(' ').toLowerCase();
     const averageWords = answers.length
       ? answers.reduce((sum, answer) => sum + answer.trim().split(/\s+/).filter(Boolean).length, 0) / answers.length
       : 0;
+    const revisedAnswerCount = history.filter((item) => item.revisedResponse).length;
 
     const strongAreas = [];
     const improvementAreas = [];
@@ -364,6 +389,18 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
       improvementAreas.push("State the ties that support your return plan");
     }
 
+    if (context.sponsorDetails?.trim()) {
+      strongAreas.push("Prepared sponsor or financial evidence facts");
+    }
+
+    if (context.importantDates?.trim()) {
+      strongAreas.push("Prepared a timeline to keep dates consistent");
+    }
+
+    if (revisedAnswerCount > 0) {
+      strongAreas.push("Revised an answer after feedback");
+    }
+
     if (userNeeds.includes('english') && averageWords > 45) {
       improvementAreas.push("Keep answers shorter so they are easier to deliver clearly");
     }
@@ -375,8 +412,16 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
     return {
       strongAreas: strongAreas.length ? strongAreas : ["Completed the current practice step"],
       improvementAreas: improvementAreas.length ? improvementAreas : ["Keep answers concise and consistent"],
-      overallScore
+      overallScore,
+      revisedAnswerCount
     };
+  };
+
+  const scheduleAutoAdvance = (history, stats, delay = AUTO_ADVANCE_DELAY_MS) => {
+    clearAutoAdvanceTimer();
+    autoAdvanceTimerRef.current = setTimeout(() => {
+      handleNextQuestion(history, stats);
+    }, delay);
   };
 
   const handleUserResponse = async () => {
@@ -446,13 +491,7 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
       
       const nextStats = updateInterviewStats(newHistory);
 
-      if (autoAdvanceTimerRef.current) {
-        clearTimeout(autoAdvanceTimerRef.current);
-      }
-
-      autoAdvanceTimerRef.current = setTimeout(() => {
-        handleNextQuestion(newHistory, nextStats);
-      }, AUTO_ADVANCE_DELAY_MS);
+      scheduleAutoAdvance(newHistory, nextStats);
     } catch (error) {
       console.error("Error getting agent response:", error);
       const fallbackResponse = 'I could not process that answer with the remote service, so keep going and use the final summary to review your response.';
@@ -471,13 +510,7 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
       setAgentResponse(fallbackResponse);
       const nextStats = updateInterviewStats(failedHistory);
 
-      if (autoAdvanceTimerRef.current) {
-        clearTimeout(autoAdvanceTimerRef.current);
-      }
-
-      autoAdvanceTimerRef.current = setTimeout(() => {
-        handleNextQuestion(failedHistory, nextStats);
-      }, AUTO_ADVANCE_DELAY_MS);
+      scheduleAutoAdvance(failedHistory, nextStats);
     } finally {
       setIsLoading(false);
       setUserResponse(''); // Clear input field
@@ -491,6 +524,8 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
   };
 
   const handleNextQuestion = (history = conversationHistory, stats = interviewStats) => {
+    clearAutoAdvanceTimer();
+    resetRevisionState();
     const nextIndex = currentQuestionIndex + 1;
     
     if (nextIndex >= interviewQuestions.length) {
@@ -511,6 +546,71 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
       setCurrentQuestionIndex(nextIndex);
       setAgentResponse(''); // Clear agent response for next question
     }
+  };
+
+  const handleReviseAnswer = () => {
+    if (!latestConversationItem) return;
+
+    clearAutoAdvanceTimer();
+    setRevisionDraft(latestConversationItem.revisedResponse || latestConversationItem.userResponse || '');
+    setRevisionItemIndex(conversationHistory.length - 1);
+    setRevisionMessage('');
+    trackEvent('answer_revision_started', {
+      sessionId,
+      country: selectedCountry,
+      visaType: selectedVisaType,
+      feedbackStyle: feedbackLevel,
+    });
+  };
+
+  const handleSaveRevision = () => {
+    const trimmedRevision = revisionDraft.trim();
+
+    if (!trimmedRevision) {
+      setRevisionMessage('Write the revised answer before saving.');
+      return;
+    }
+
+    if (revisionItemIndex === null || !conversationHistory[revisionItemIndex]) {
+      setRevisionMessage('This answer can no longer be revised.');
+      return;
+    }
+
+    const originalAnswer = conversationHistory[revisionItemIndex].userResponse || '';
+    const revisionComparison = buildRevisionComparison(originalAnswer, trimmedRevision);
+    const updatedHistory = conversationHistory.map((item, index) => (
+      index === revisionItemIndex
+        ? {
+            ...item,
+            revisedResponse: trimmedRevision,
+            revisionComparison,
+            revisionSavedAt: new Date().toISOString(),
+          }
+        : item
+    ));
+
+    setConversationHistory(updatedHistory);
+    setRevisionUsed(true);
+    setRevisionItemIndex(null);
+    setRevisionDraft('');
+    setRevisionMessage('Revision saved. Moving forward with the stronger version.');
+    const nextStats = updateInterviewStats(updatedHistory);
+
+    trackEvent('answer_revised', {
+      sessionId,
+      country: selectedCountry,
+      visaType: selectedVisaType,
+      feedbackStyle: feedbackLevel,
+      revisionWordDelta: revisionComparison.wordDelta,
+      revisionCount: updatedHistory.filter((item) => item.revisedResponse).length,
+    });
+
+    scheduleAutoAdvance(updatedHistory, nextStats, 1400);
+  };
+
+  const handleCancelRevision = () => {
+    resetRevisionState();
+    scheduleAutoAdvance(conversationHistory, interviewStats);
   };
 
   const startInterview = async () => {
@@ -567,6 +667,8 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
     setConversationHistory([]);
     setCurrentQuestionIndex(0);
     setInterviewComplete(false);
+    setRevisionUsed(false);
+    resetRevisionState();
     setShowPrep(false);
     setPostSessionConfidence(userConfidence);
     setIsPreparingQuestions(false);
@@ -690,6 +792,14 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
     latestConversationItem.question === currentQuestion &&
     latestConversationItem.agentResponse
   );
+  const isRevisionOpen = revisionItemIndex !== null && revisionItemIndex === conversationHistory.length - 1;
+  const canReviseCurrentAnswer = Boolean(
+    hasCurrentAnswerFeedback &&
+    !isLoading &&
+    !isRevisionOpen &&
+    !revisionUsed &&
+    !latestConversationItem?.revisedResponse
+  );
   const hasAccountSession = Boolean(localStorage.getItem('token'));
   const generalTips = Array.isArray(preparationTips.general) && preparationTips.general.length
     ? preparationTips.general
@@ -701,6 +811,10 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
     ? commonMistakes
     : DEFAULT_COMMON_MISTAKES;
   const questionSetNotice = getQuestionSetNotice(questionSetMeta);
+  const consistencyInsights = getFactConsistencyInsights({
+    sessionContext: getCleanSessionContext(),
+    conversationHistory,
+  });
 
   return (
     <div className={`interview-container ${showPrep ? 'prep-mode' : ''}`}>
@@ -777,6 +891,15 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
                     placeholder="Family sponsor, savings, scholarship"
                   />
                 </label>
+                <label className="context-field">
+                  <span>{CONTEXT_FIELD_LABELS.sponsorDetails}</span>
+                  <input
+                    type="text"
+                    value={sessionContext.sponsorDetails}
+                    onChange={(e) => handleContextChange('sponsorDetails', e.target.value)}
+                    placeholder="Parent sponsor, bank statements, scholarship letter"
+                  />
+                </label>
                 <label className="context-field context-field-wide">
                   <span>{CONTEXT_FIELD_LABELS.returnPlan}</span>
                   <input
@@ -784,6 +907,15 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
                     value={sessionContext.returnPlan}
                     onChange={(e) => handleContextChange('returnPlan', e.target.value)}
                     placeholder="Job, family, business, property, or career plan at home"
+                  />
+                </label>
+                <label className="context-field context-field-wide">
+                  <span>{CONTEXT_FIELD_LABELS.importantDates}</span>
+                  <input
+                    type="text"
+                    value={sessionContext.importantDates}
+                    onChange={(e) => handleContextChange('importantDates', e.target.value)}
+                    placeholder="Program start date, trip duration, expected return timeline"
                   />
                 </label>
                 <label className="context-field context-field-wide">
@@ -1007,6 +1139,23 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
                     </svg>
                   </div>
                 </div>
+
+                {item.revisedResponse && (
+                  <div className="revision-summary">
+                    <div className="revision-summary-header">
+                      <span>Revised answer</span>
+                      <small>{item.revisionComparison?.wordDelta > 0 ? `+${item.revisionComparison.wordDelta} words` : `${item.revisionComparison?.wordDelta || 0} words`}</small>
+                    </div>
+                    <p>{item.revisedResponse}</p>
+                    {item.revisionComparison?.notes?.length > 0 && (
+                      <ul>
+                        {item.revisionComparison.notes.slice(0, 3).map((note) => (
+                          <li key={note}>{note}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
                 
                 {item.agentResponse && (
                   <div className="agent-feedback">
@@ -1107,12 +1256,70 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
                 )}
                 
                 {hasCurrentAnswerFeedback && !isLoading && (
-                  <p className="auto-advance-status">
-                    {currentQuestionIndex < interviewQuestions.length - 1 ? "Moving to the next question..." : "Preparing your summary..."}
-                  </p>
+                  <div className="feedback-actions">
+                    <p className="auto-advance-status">
+                      {isRevisionOpen
+                        ? 'Revision paused the timer.'
+                        : currentQuestionIndex < interviewQuestions.length - 1
+                          ? 'Moving to the next question...'
+                          : 'Preparing your summary...'}
+                    </p>
+                    {canReviseCurrentAnswer && (
+                      <button className="revise-button" onClick={handleReviseAnswer}>
+                        Revise Answer
+                      </button>
+                    )}
+                    {!isRevisionOpen && (
+                      <button
+                        className="next-button"
+                        onClick={() => handleNextQuestion(conversationHistory, interviewStats)}
+                      >
+                        Continue Now
+                      </button>
+                    )}
+                  </div>
                 )}
                 
               </div>
+
+              {isRevisionOpen && (
+                <div className="revision-panel">
+                  <div className="revision-panel-heading">
+                    <div>
+                      <span className="revision-kicker">One-shot revision</span>
+                      <h4>Strengthen this answer before moving on</h4>
+                    </div>
+                    <button className="revision-cancel-button" onClick={handleCancelRevision}>
+                      Cancel
+                    </button>
+                  </div>
+                  <div className="revision-original">
+                    <span>Original</span>
+                    <p>{latestConversationItem?.userResponse}</p>
+                  </div>
+                  <textarea
+                    value={revisionDraft}
+                    onChange={(event) => setRevisionDraft(event.target.value)}
+                    className="revision-input"
+                    rows="4"
+                    placeholder="Rewrite your answer with one concrete fact, a clear reason, and consistency with your application."
+                  />
+                  <div className="revision-panel-actions">
+                    <button className="submit-button" onClick={handleSaveRevision}>
+                      Save Revision
+                    </button>
+                    <button className="next-button" onClick={() => handleNextQuestion(conversationHistory, interviewStats)}>
+                      Skip Revision
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {revisionMessage && (
+                <p className={`revision-message ${revisionMessage.startsWith('Write') ? 'error' : ''}`}>
+                  {revisionMessage}
+                </p>
+              )}
             </div>
           ) : (
             <div className={`interview-complete ${showAnimation ? 'show-animation' : ''}`}>
@@ -1196,6 +1403,26 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
                       </ul>
                     </div>
                   </div>
+
+                  <div className="consistency-summary">
+                    <div>
+                      <h4>Consistency Prep</h4>
+                      <p>
+                        {consistencyInsights.preparedFacts.length
+                          ? `${consistencyInsights.coveredFacts.length}/${consistencyInsights.preparedFacts.length} prepared facts appeared in your answers.`
+                          : 'Add applicant facts before your next session for stronger consistency checks.'}
+                      </p>
+                    </div>
+                    <div className="consistency-chip-list">
+                      {consistencyInsights.gaps.length ? (
+                        consistencyInsights.gaps.slice(0, 4).map((field) => (
+                          <span className="consistency-chip gap" key={field.key}>{field.label}</span>
+                        ))
+                      ) : (
+                        <span className="consistency-chip ready">No obvious prepared-fact gaps</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
                 
                 <div className="completion-actions">
@@ -1208,11 +1435,14 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
                   </button>
 
                   <button className="restart-button" onClick={() => {
+                    clearAutoAdvanceTimer();
                     const nextSessionId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
                     setSessionId(nextSessionId);
                     firstAnswerTrackedRef.current = false;
                     setCurrentQuestionIndex(0);
                     setConversationHistory([]);
+                    setRevisionUsed(false);
+                    resetRevisionState();
                     setAgentResponse("Welcome back! Let's start the interview again.");
                     setInterviewComplete(false);
                     trackEvent('session_started', {
@@ -1234,11 +1464,14 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
                   </button>
                   
                   <button className="prep-button" onClick={() => {
+                    clearAutoAdvanceTimer();
                     setShowPrep(true);
                     setSessionId('');
                     firstAnswerTrackedRef.current = false;
                     setCurrentQuestionIndex(0);
                     setConversationHistory([]);
+                    setRevisionUsed(false);
+                    resetRevisionState();
                     setInterviewComplete(false);
                   }}>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

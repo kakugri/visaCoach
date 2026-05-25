@@ -14,7 +14,9 @@ const SESSION_CONTEXT_FIELDS = [
   'institutionOrHost',
   'programOrPurpose',
   'fundingSource',
+  'sponsorDetails',
   'returnPlan',
+  'importantDates',
   'notes',
 ];
 const ALLOWED_CONCERNS = new Set(['answering', 'documentation', 'english', 'nervousness']);

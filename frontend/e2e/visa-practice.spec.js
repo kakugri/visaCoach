@@ -109,6 +109,10 @@ const mockSavedSessions = async (page) => {
         before: 5,
         after: 7,
       },
+      questionSet: {
+        source: 'gemini',
+        model: 'test-question-model',
+      },
       stats: {
         overallScore: 82,
         strongAreas: ['Prepared a funding source before practice'],
@@ -118,7 +122,13 @@ const mockSavedSessions = async (page) => {
         {
           question: 'How will you finance your education?',
           answer: 'My family sponsor and savings will fund my studies.',
+          revisedAnswer: 'My parents will sponsor my studies with bank statements that match my application.',
+          revisionComparison: {
+            wordDelta: 6,
+            notes: ['Added 6 words of detail.', 'Added a concrete visa-relevant fact.'],
+          },
           feedback: 'Add sponsor details and document consistency.',
+          feedbackSource: 'gemini',
         },
       ],
     },
@@ -267,6 +277,11 @@ const createLocalSession = () => ({
     {
       question: 'How will you finance your education?',
       userResponse: 'My family sponsor and savings will pay for my studies.',
+      revisedResponse: 'My parents will sponsor my studies with bank statements that match my application.',
+      revisionComparison: {
+        wordDelta: 6,
+        notes: ['Added 6 words of detail.', 'Added a concrete visa-relevant fact.'],
+      },
       agentResponse: 'Add sponsor relationship and document consistency.',
       feedbackSource: 'gemini',
       feedbackStyle: 'detailed',
@@ -338,7 +353,10 @@ const mockRegistrationWithMigration = async (page) => {
           questions: migratedSession.interviewHistory.map((item) => ({
             question: item.question,
             answer: item.userResponse,
+            revisedAnswer: item.revisedResponse,
+            revisionComparison: item.revisionComparison,
             feedback: item.agentResponse,
+            feedbackSource: item.feedbackSource,
           })),
         },
       ]),
@@ -635,6 +653,16 @@ test('completes a full session, renders structured feedback, and copies the summ
     await page.getByRole('button', { name: 'Submit Answer' }).click();
     await expect(page.getByText(`Mock quick read ${index + 1}`)).toBeVisible();
 
+    if (index === 0) {
+      await expect(page.getByRole('button', { name: 'Revise Answer' })).toBeVisible();
+      await page.getByRole('button', { name: 'Revise Answer' }).click();
+      await expect(page.getByRole('heading', { name: 'Strengthen this answer before moving on' })).toBeVisible();
+      await page.locator('.revision-input').fill('After graduation I will return to Ghana to work in cybersecurity with my current employer.');
+      await page.getByRole('button', { name: 'Save Revision' }).click();
+      await expect(page.getByText('Revision saved. Moving forward with the stronger version.')).toBeVisible();
+      await expect(page.getByText('Revised answer')).toBeVisible();
+    }
+
     if (index < answers.length - 1) {
       await expect(page.getByText(`Question ${index + 2} of 5`)).toBeVisible({ timeout: 6_000 });
     }
@@ -650,6 +678,8 @@ test('completes a full session, renders structured feedback, and copies the summ
   const summary = await page.evaluate(() => navigator.clipboard.readText());
   expect(summary).toContain('VisaCoach Practice Summary');
   expect(summary).toContain('Mock quick read 1');
+  expect(summary).toContain('Revised answer: After graduation I will return to Ghana');
+  expect(summary).toContain('Consistency prep:');
 
   await page.getByRole('link', { name: 'Share Feedback' }).click();
   await expect(page).toHaveURL(/\/contact$/);
@@ -684,12 +714,15 @@ test('shows saved session history and copies a saved summary', async ({ page, co
   await page.getByText('Review answers').click();
   await expect(page.getByText('How will you finance your education?')).toBeVisible();
   await expect(page.getByText('My family sponsor and savings will fund my studies.')).toBeVisible();
+  await expect(page.getByText('My parents will sponsor my studies with bank statements')).toBeVisible();
 
   await page.getByRole('button', { name: 'Copy Summary' }).click();
   await expect(page.getByText('Session summary copied.')).toBeVisible();
   const savedSummary = await page.evaluate(() => navigator.clipboard.readText());
   expect(savedSummary).toContain('VisaCoach Saved Session');
   expect(savedSummary).toContain('US');
+  expect(savedSummary).toContain('Revised answers: 1');
+  expect(savedSummary).toContain('Revised answer: My parents will sponsor');
 
   page.once('dialog', async (dialog) => {
     expect(dialog.message()).toContain('Delete this saved practice session');
@@ -790,6 +823,8 @@ test('opens profile and settings from the account dropdown', async ({ page, cont
   await page.getByRole('menuitem', { name: 'Profile' }).click();
   await expect(page).toHaveURL(/\/profile$/);
   await expect(page.getByRole('heading', { name: 'Test User' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Progress' })).toBeVisible();
+  await expect(page.getByText('Revisions saved')).toBeVisible();
   await expect(page.getByText('Member since')).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });

@@ -2,10 +2,10 @@
 
 Use this after the first beta feedback review. Do not build all of these at once.
 
-Current recommendation:
+Current recommendation after V1-V4 first slice:
 
 ```text
-A1 Answer Revision Loop -> D1 Progress Dashboard -> C1 Visa Fact Consistency Prep
+Reevaluate live usage -> refine the strongest V1-V4 signal -> keep M8/job interviews deferred
 ```
 
 M8/job interviews remain deferred unless users repeatedly ask for non-visa modes.
@@ -37,6 +37,8 @@ First slice:
 ```text
 answer -> feedback -> revise answer -> compare original vs revised -> save both in summary
 ```
+
+Status: first slice complete in the product.
 
 ## Candidate B: Job Interview Pilot
 
@@ -105,6 +107,8 @@ First slice:
 profile facts -> answer feedback checks facts -> end summary lists consistency gaps
 ```
 
+Status: first slice complete in the product through optional sponsor/evidence and timeline facts plus summary consistency gaps.
+
 ## Candidate D: Progress Dashboard
 
 Recommended after Candidate A. It becomes more useful once sessions include original/revised answers and richer improvement patterns.
@@ -132,11 +136,14 @@ First slice:
 profile page -> progress panel -> confidence trend + recurring focus areas
 ```
 
+Status: first slice complete in the product through the profile progress dashboard.
+
 ## Selection Rule
 
-Pick one candidate after the first beta review:
+Pick one refinement after V1-V4 usage:
 
-- Default to A first.
-- Choose D second if users repeat sessions or save revised answers.
-- Choose C after A/D if users worry about document/fact consistency.
+- Deepen A if users revise answers and ask for better comparison/coaching.
+- Deepen D if users repeat sessions and care about visible improvement.
+- Deepen C if users worry about document/fact consistency.
+- Deepen stricter officer mode if realistic practice feels too soft or too coach-like.
 - Choose B only if non-visa demand is repeated and specific.

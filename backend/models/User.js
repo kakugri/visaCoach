@@ -23,7 +23,9 @@ const userSchema = new mongoose.Schema({
       institutionOrHost: { type: String },
       programOrPurpose: { type: String },
       fundingSource: { type: String },
+      sponsorDetails: { type: String },
       returnPlan: { type: String },
+      importantDates: { type: String },
       notes: { type: String },
     },
     confidence: {
@@ -41,6 +43,9 @@ const userSchema = new mongoose.Schema({
     questions: [{
       question: { type: String },
       answer: { type: String },
+      revisedAnswer: { type: String },
+      revisionComparison: { type: mongoose.Schema.Types.Mixed },
+      revisionSavedAt: { type: Date },
       feedback: { type: String },
       feedbackDetails: { type: mongoose.Schema.Types.Mixed },
       feedbackSource: { type: String },
@@ -52,7 +57,9 @@ const userSchema = new mongoose.Schema({
       institutionOrHost: { type: String },
       programOrPurpose: { type: String },
       fundingSource: { type: String },
+      sponsorDetails: { type: String },
       returnPlan: { type: String },
+      importantDates: { type: String },
       notes: { type: String },
     },
     confidence: {

@@ -59,6 +59,11 @@ test('buildPracticeSummary includes context, concerns, feedback, and disclaimer'
       {
         question: 'How will you finance your education?',
         userResponse: 'My family sponsor will fund my studies.',
+        revisedResponse: 'My parents will sponsor my MS Computer Science program with bank statements matching my I-20.',
+        revisionComparison: {
+          wordDelta: 8,
+          notes: ['Added 8 words of detail.', 'Added a concrete visa-relevant fact.'],
+        },
         feedback,
       },
     ],
@@ -68,6 +73,9 @@ test('buildPracticeSummary includes context, concerns, feedback, and disclaimer'
   expect(summary).toContain('Concerns: Required documentation, English language skills');
   expect(summary).toContain('Home country or current residence: Ghana');
   expect(summary).toContain('Practice readiness: 84%');
+  expect(summary).toContain('Revised answers: 1');
+  expect(summary).toContain('Revised answer: My parents will sponsor');
+  expect(summary).toContain('Consistency prep:');
   expect(summary).toContain('Risk flags: Funding is vague; Return plan is thin');
   expect(summary).toContain('It is not legal advice');
 });

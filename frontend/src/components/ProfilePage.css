@@ -189,6 +189,107 @@
   font-size: 0.875rem;
 }
 
+.progress-dashboard {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--bg-white);
+  box-shadow: var(--shadow-sm);
+  padding: 1.5rem;
+}
+
+.progress-grid,
+.progress-detail-grid {
+  display: grid;
+  gap: 0.875rem;
+}
+
+.progress-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.progress-detail-grid {
+  grid-template-columns: minmax(0, 1.15fr) minmax(260px, 0.85fr);
+}
+
+.progress-card,
+.progress-detail-card {
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-light);
+  padding: 1rem;
+}
+
+.progress-card span,
+.progress-detail-card h4,
+.source-history span {
+  color: var(--text-light);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.progress-card strong {
+  display: block;
+  margin: 0.25rem 0;
+  color: var(--text-dark);
+  font-size: 1.8rem;
+}
+
+.progress-card p,
+.progress-detail-card p {
+  margin: 0;
+  color: var(--text-medium);
+  line-height: 1.5;
+}
+
+.progress-detail-card h4 {
+  margin: 0 0 0.75rem;
+  color: var(--text-dark);
+  font-size: 1rem;
+  text-transform: none;
+}
+
+.progress-detail-card ul {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.progress-detail-card li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border-radius: var(--radius-sm);
+  background-color: #ffffff;
+  padding: 0.65rem 0.75rem;
+  color: var(--text-medium);
+}
+
+.progress-detail-card li strong {
+  color: var(--primary-color);
+}
+
+.source-history {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.source-history > div {
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  padding: 0.75rem;
+}
+
+.source-history p {
+  margin-top: 0.35rem;
+}
+
 /* Profile Details */
 .profile-details {
   background-color: var(--bg-white);
@@ -673,6 +774,27 @@
   color: var(--text-light);
 }
 
+.session-revised-answer {
+  margin-top: 0.7rem;
+  padding: 0.7rem;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius-sm);
+  background: #eff6ff;
+}
+
+.session-revised-answer span {
+  display: block;
+  margin-bottom: 0.3rem;
+  color: #1d4ed8;
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.session-revised-answer p {
+  color: #1e3a8a;
+}
+
 .score-badge {
   padding: 0.35rem 0.65rem;
   border-radius: 9999px;
@@ -850,6 +972,11 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .progress-grid,
+  .progress-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
   .session-toolbar {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -879,7 +1006,8 @@
   .practice-profile-form,
   .practice-profile-controls,
   .profile-concern-options,
-  .profile-summary-lists {
+  .profile-summary-lists,
+  .source-history {
     grid-template-columns: 1fr;
   }
 

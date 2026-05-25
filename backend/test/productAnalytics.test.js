@@ -28,6 +28,8 @@ test('sanitizeProperties keeps only allowed non-sensitive fields', () => {
     questionSourceReason: 'network',
     questionCount: 5,
     readinessScore: 82,
+    revisionWordDelta: 9,
+    revisionCount: 1,
   });
 
   assert.deepEqual(sanitized, {
@@ -40,6 +42,8 @@ test('sanitizeProperties keeps only allowed non-sensitive fields', () => {
     questionSourceReason: 'network',
     questionCount: 5,
     readinessScore: 82,
+    revisionWordDelta: 9,
+    revisionCount: 1,
   });
 });
 
