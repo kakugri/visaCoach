@@ -583,55 +583,6 @@
   color: var(--text-light);
 }
 
-.interview-progress {
-  background-color: var(--bg-white);
-  border-radius: var(--radius-md);
-  padding: 1.5rem;
-  box-shadow: var(--shadow-sm);
-  margin-bottom: 2rem;
-}
-
-.chart-container {
-  height: 300px;
-}
-
-.no-chart-data {
-  height: 200px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--bg-lighter);
-  border-radius: var(--radius-sm);
-  color: var(--text-light);
-}
-
-.interview-table {
-  background-color: var(--bg-white);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
-
-.interview-table-header {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1.5fr 0.75fr 1fr;
-  background-color: var(--bg-lighter);
-  padding: 1rem;
-  font-weight: 600;
-  color: var(--text-dark);
-}
-
-.interview-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1.5fr 0.75fr 1fr;
-  padding: 1rem;
-  border-bottom: 1px solid var(--border-light);
-}
-
-.interview-row:last-child {
-  border-bottom: none;
-}
-
 .score-badge {
   padding: 0.35rem 0.65rem;
   border-radius: 9999px;
@@ -676,61 +627,6 @@
   color: var(--text-light);
 }
 
-/* Insights Section */
-.insights-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-}
-
-.insight-card {
-  background-color: var(--bg-white);
-  border-radius: var(--radius-md);
-  padding: 1.25rem;
-  box-shadow: var(--shadow-sm);
-}
-
-.insight-card h4 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-dark);
-  margin-top: 0;
-  margin-bottom: 1rem;
-}
-
-.insight-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.insight-list li {
-  padding: 0.5rem 0;
-  display: flex;
-  align-items: center;
-}
-
-.success-item::before {
-  content: '✓';
-  color: var(--secondary-color);
-  font-weight: bold;
-  margin-right: 0.5rem;
-}
-
-.improvement-item::before {
-  content: '!';
-  color: var(--warning-color);
-  font-weight: bold;
-  margin-right: 0.5rem;
-}
-
-/* Settings Section */
-.settings-option {
-  display: flex;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
 .settings-section {
   background-color: var(--bg-white);
   border-radius: var(--radius-md);
@@ -747,83 +643,6 @@
   margin: 0 0 1rem;
   color: var(--text-medium);
   line-height: 1.6;
-}
-
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 40px;
-  height: 24px;
-  margin-right: 0.75rem;
-}
-
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: var(--border-lighter);
-  transition: var(--transition);
-  border-radius: 34px;
-}
-
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: var(--transition);
-  border-radius: 50%;
-}
-
-input:checked + .slider {
-  background-color: var(--primary-color);
-}
-
-input:checked + .slider:before {
-  transform: translateX(16px);
-}
-
-/* Documents Section */
-.document-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1rem;
-}
-
-.document-card {
-  background-color: var(--bg-white);
-  border-radius: var(--radius-md);
-  padding: 1.5rem;
-  box-shadow: var(--shadow-sm);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  min-height: 200px;
-}
-
-.document-card.empty {
-  border: 2px dashed var(--border-lighter);
-  background-color: var(--bg-lighter);
-}
-
-.document-icon {
-  width: 48px;
-  height: 48px;
-  color: var(--text-light);
-  margin-bottom: 1rem;
 }
 
 /* Button & Link Styles */
@@ -915,23 +734,9 @@ input:checked + .slider:before {
   .session-toolbar {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  
-  .insights-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (max-width: 768px) {
-  .interview-table-header, 
-  .interview-row {
-    grid-template-columns: 2fr 1fr 1fr;
-  }
-  
-  .interview-cell:nth-child(3),
-  .interview-cell:nth-child(5) {
-    display: none;
-  }
-  
   .profile-header {
     flex-direction: column;
     text-align: center;
@@ -978,14 +783,5 @@ input:checked + .slider:before {
 
   .session-toolbar {
     grid-template-columns: 1fr;
-  }
-  
-  .interview-table-header, 
-  .interview-row {
-    grid-template-columns: 2fr 1fr;
-  }
-  
-  .interview-cell:nth-child(4) {
-    display: none;
   }
 }
