@@ -545,6 +545,9 @@ test('renders public info pages and copies the feedback template', async ({ page
   const template = await page.evaluate(() => navigator.clipboard.readText());
   expect(template).toContain('Visa path practiced:');
   expect(template).toContain('Browser/device:');
+
+  const events = await page.evaluate(() => JSON.parse(localStorage.getItem('visaCoach:analyticsEvents') || '[]'));
+  expect(events.some((event) => event.eventName === 'feedback_template_copied')).toBe(true);
   await expectNoHorizontalOverflow(page);
 });
 
@@ -628,6 +631,10 @@ test('completes a full session, renders structured feedback, and copies the summ
   const summary = await page.evaluate(() => navigator.clipboard.readText());
   expect(summary).toContain('VisaCoach Practice Summary');
   expect(summary).toContain('Mock quick read 1');
+
+  await page.getByRole('link', { name: 'Share Feedback' }).click();
+  await expect(page).toHaveURL(/\/contact$/);
+  await expect(page.getByRole('heading', { name: 'Contact' })).toBeVisible();
 });
 
 test('shows saved session history and copies a saved summary', async ({ page, context }) => {

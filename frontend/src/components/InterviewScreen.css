@@ -1057,7 +1057,7 @@
   margin-bottom: 24px;
 }
 
-.restart-button, .prep-button, .copy-summary-button {
+.restart-button, .prep-button, .copy-summary-button, .feedback-link-button {
   background-color: #3b82f6;
   color: white;
   padding: 12px 24px;
@@ -1072,7 +1072,7 @@
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
 }
 
-.restart-button:hover, .prep-button:hover, .copy-summary-button:hover {
+.restart-button:hover, .prep-button:hover, .copy-summary-button:hover, .feedback-link-button:hover {
   background-color: #2563eb;
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
@@ -1101,6 +1101,20 @@
 .prep-button:hover {
   background-color: #0f766e;
   box-shadow: 0 6px 16px rgba(13, 148, 136, 0.3);
+}
+
+.feedback-link-button {
+  background-color: #ffffff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+  box-shadow: none;
+  text-decoration: none;
+}
+
+.feedback-link-button:hover {
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  box-shadow: none;
 }
 
 .save-message {
@@ -1217,7 +1231,7 @@
     width: 100%;
   }
   
-  .restart-button, .prep-button, .copy-summary-button {
+  .restart-button, .prep-button, .copy-summary-button, .feedback-link-button {
     width: 100%;
   }
 

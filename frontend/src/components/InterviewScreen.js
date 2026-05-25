@@ -1227,6 +1227,19 @@ function InterviewScreen({ selectedCountry, selectedVisaType, initialDraft = nul
                     </svg>
                     Review Preparation Tips
                   </button>
+
+                  <Link
+                    to="/contact"
+                    className="feedback-link-button"
+                    onClick={() => trackEvent('feedback_prompt_opened', {
+                      source: 'session_complete',
+                      country: selectedCountry,
+                      visaType: selectedVisaType,
+                      questionsAnswered: conversationHistory.length,
+                    })}
+                  >
+                    Share Feedback
+                  </Link>
                 </div>
 
                 {!hasAccountSession && (

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import logoSymbol from '../assets/images/logo-symbol.svg';
+import { trackEvent } from '../services/analytics';
 import './InfoPage.css';
 
 const CONTACT_URL = process.env.REACT_APP_CONTACT_URL || '';
@@ -81,6 +82,7 @@ function InfoPage({ type = 'about' }) {
   const handleCopyFeedbackTemplate = async () => {
     try {
       await navigator.clipboard.writeText(FEEDBACK_TEMPLATE);
+      trackEvent('feedback_template_copied', { source: 'contact_page' });
       setCopyStatus('Feedback template copied.');
     } catch (error) {
       console.error('Unable to copy feedback template:', error);
@@ -118,7 +120,13 @@ function InfoPage({ type = 'about' }) {
 
               <div className="contact-actions">
                 {CONTACT_URL ? (
-                  <a className="info-return" href={CONTACT_URL} target="_blank" rel="noreferrer">
+                  <a
+                    className="info-return"
+                    href={CONTACT_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => trackEvent('contact_channel_opened', { source: 'contact_page' })}
+                  >
                     Open Contact Channel
                   </a>
                 ) : (

@@ -5,12 +5,12 @@ const ALLOWED_PROPERTY_KEYS = new Set([
   'country',
   'feedbackLevel',
   'feedbackStyle',
+  'source',
   'model',
   'questionSource',
   'questionsAnswered',
   'readinessScore',
   'restarted',
-  'source',
   'visaType',
 ]);
 
