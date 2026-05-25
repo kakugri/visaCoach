@@ -112,6 +112,8 @@ A healthy response returns `200` with:
 
 If MongoDB is configured but disconnected, health returns `503` with `status: "degraded"`.
 
+The detailed health payload also includes sanitized AI runtime state under `checks.ai`, including the configured model, Gemini quota cooldown status, and in-memory counts of Gemini responses versus local fallbacks since the backend process started. It does not expose API keys or user answers.
+
 ## Logging
 
 Backend requests emit structured JSON logs with:
@@ -176,6 +178,14 @@ Then do one browser smoke pass:
 - Submit one short answer and confirm the feedback source label is visible.
 - Sign in or register and confirm saved history loads.
 - Delete the test saved session.
+
+For AI/quota diagnostics:
+
+```bash
+curl https://visacoach.kakugri.dev/api/health
+```
+
+Check `checks.ai.quotaCooldown.active`, `checks.ai.quotaCooldown.retryAfterSeconds`, and `checks.ai.usageSinceStart`.
 
 ## Rollback
 

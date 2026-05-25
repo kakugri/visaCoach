@@ -13,7 +13,13 @@ const getMongoStatus = (mongoose) => {
   };
 };
 
-const getHealthPayload = ({ mongoose, config, startedAt = Date.now(), includeDetails = true }) => {
+const getHealthPayload = ({
+  mongoose,
+  config,
+  startedAt = Date.now(),
+  includeDetails = true,
+  aiStatus = null,
+}) => {
   const mongo = getMongoStatus(mongoose);
   const hasMongoProblem = config.mongoUriSet && mongo.readyState !== 1;
   const status = hasMongoProblem ? 'degraded' : 'ok';
@@ -33,6 +39,13 @@ const getHealthPayload = ({ mongoose, config, startedAt = Date.now(), includeDet
       jwtConfigured: config.jwtSecretSet,
       googleAuthConfigured: config.googleClientIdSet,
     };
+
+    if (aiStatus) {
+      payload.checks.ai = {
+        geminiConfigured: config.geminiKeySet,
+        ...aiStatus,
+      };
+    }
   }
 
   return payload;

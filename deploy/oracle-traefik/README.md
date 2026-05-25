@@ -124,6 +124,14 @@ APP_URL=https://visa.yourdomain.com npm run smoke:prod
 
 This smoke test avoids Gemini calls so it does not spend AI quota.
 
+For AI/quota visibility, inspect the detailed health payload:
+
+```bash
+curl https://visa.yourdomain.com/api/health
+```
+
+Look at `checks.ai.quotaCooldown` and `checks.ai.usageSinceStart`. These fields are runtime counters only; they reset when the backend container restarts and do not include secrets or applicant answers.
+
 If `/api/health` returns the React HTML instead of JSON, Traefik is sending API paths to the frontend. Re-copy the latest `compose.yaml`, restart the VisaCoach containers, and inspect the backend router labels:
 
 ```bash

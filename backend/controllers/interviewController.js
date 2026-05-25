@@ -8,6 +8,22 @@ const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash-lite";
 const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL });
 const ACTIVE_MODEL = process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
 let geminiQuotaBlockedUntil = 0;
+const aiRuntimeStats = {
+  feedback: {
+    gemini: 0,
+    localFallback: 0,
+    quotaFallback: 0,
+    errorFallback: 0,
+  },
+  questions: {
+    gemini: 0,
+    localFallback: 0,
+    quotaFallback: 0,
+    errorFallback: 0,
+  },
+  lastFallbackAt: null,
+  lastQuotaAt: null,
+};
 
 const PROMPT_PROFILES = {
   f1Student: {
@@ -291,6 +307,44 @@ const getGeminiRetryDelayMs = (error) => {
 
 const isQuotaError = (error) => error?.status === 429 || /quota|too many requests|rate limit/i.test(error?.message || "");
 
+const recordAiSuccess = (kind) => {
+  if (!aiRuntimeStats[kind]) return;
+  aiRuntimeStats[kind].gemini += 1;
+};
+
+const recordAiFallback = (kind, reason = "error") => {
+  if (!aiRuntimeStats[kind]) return;
+
+  aiRuntimeStats[kind].localFallback += 1;
+  aiRuntimeStats.lastFallbackAt = new Date().toISOString();
+
+  if (reason === "quota" || reason === "quota_cooldown") {
+    aiRuntimeStats[kind].quotaFallback += 1;
+    aiRuntimeStats.lastQuotaAt = aiRuntimeStats.lastFallbackAt;
+  } else {
+    aiRuntimeStats[kind].errorFallback += 1;
+  }
+};
+
+const getAiRuntimeStatus = (now = Date.now()) => {
+  const quotaBlocked = geminiQuotaBlockedUntil > now;
+
+  return {
+    model: ACTIVE_MODEL,
+    quotaCooldown: {
+      active: quotaBlocked,
+      retryAfterSeconds: quotaBlocked ? Math.ceil((geminiQuotaBlockedUntil - now) / 1000) : 0,
+      blockedUntil: quotaBlocked ? new Date(geminiQuotaBlockedUntil).toISOString() : null,
+    },
+    usageSinceStart: {
+      feedback: { ...aiRuntimeStats.feedback },
+      questions: { ...aiRuntimeStats.questions },
+      lastFallbackAt: aiRuntimeStats.lastFallbackAt,
+      lastQuotaAt: aiRuntimeStats.lastQuotaAt,
+    },
+  };
+};
+
 const buildFallbackResponse = ({ body, isRealistic = false, reason = "error", retryAfterSeconds = 0 }) => {
   if (isRealistic) {
     return {
@@ -488,6 +542,7 @@ const getAgentResponse = async (req, res) => {
     });
 
     if (geminiQuotaBlockedUntil > Date.now()) {
+      recordAiFallback("feedback", "quota_cooldown");
       return res.status(200).json(buildFallbackResponse({
         body: req.body,
         isRealistic,
@@ -505,6 +560,7 @@ const getAgentResponse = async (req, res) => {
 
     const result = await model.generateContent(prompt);
     const rawText = result.response.text().trim();
+    recordAiSuccess("feedback");
 
     if (isRealistic) {
       return res.json({
@@ -533,6 +589,7 @@ const getAgentResponse = async (req, res) => {
         geminiQuotaBlockedUntil = Date.now() + retryDelayMs;
       }
 
+      recordAiFallback("feedback", retryDelayMs ? "quota" : "error");
       return res.status(200).json(buildFallbackResponse({
         body: req.body,
         isRealistic: req.body.feedbackStyle === "realistic",
@@ -562,6 +619,7 @@ const getInterviewQuestions = async (req, res) => {
     }
 
     if (geminiQuotaBlockedUntil > Date.now()) {
+      recordAiFallback("questions", "quota_cooldown");
       return res.status(200).json(buildFallbackQuestionsResponse({
         body: { country, visaType, sessionContext },
         reason: "quota_cooldown",
@@ -579,6 +637,7 @@ const getInterviewQuestions = async (req, res) => {
       throw new Error("Gemini returned an invalid question set");
     }
 
+    recordAiSuccess("questions");
     res.json({
       questions,
       source: "gemini",
@@ -592,6 +651,7 @@ const getInterviewQuestions = async (req, res) => {
       geminiQuotaBlockedUntil = Date.now() + retryDelayMs;
     }
 
+    recordAiFallback("questions", retryDelayMs ? "quota" : "error");
     res.status(200).json(buildFallbackQuestionsResponse({
       body: req.body || {},
       reason: retryDelayMs ? "quota" : "error",
@@ -731,6 +791,7 @@ const getCommonMistakes = async (req, res) => {
 
 module.exports = {
   getAgentResponse,
+  getAiRuntimeStatus,
   getInterviewQuestions,
   getPreInterviewTips,
   getCommonMistakes,
@@ -744,6 +805,7 @@ module.exports = {
     buildQuestionPrompt,
     extractJson,
     feedbackToMarkdown,
+    getAiRuntimeStatus,
     getGeminiRetryDelayMs,
     normalizeQuestions,
     getPromptProfile,

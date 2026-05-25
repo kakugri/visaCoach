@@ -143,6 +143,17 @@ test('getGeminiRetryDelayMs reads retry delay from quota errors', () => {
   assert.equal(retryMs, 39_000);
 });
 
+test('getAiRuntimeStatus exposes sanitized model and usage shape', () => {
+  const status = _test.getAiRuntimeStatus();
+
+  assert.equal(typeof status.model, 'string');
+  assert.equal(status.quotaCooldown.active, false);
+  assert.equal(status.quotaCooldown.retryAfterSeconds, 0);
+  assert.equal(typeof status.usageSinceStart.feedback.gemini, 'number');
+  assert.equal(typeof status.usageSinceStart.questions.localFallback, 'number');
+  assert.equal(Object.prototype.hasOwnProperty.call(status, 'apiKey'), false);
+});
+
 test('buildFallbackResponse marks quota fallback metadata', () => {
   const fallback = _test.buildFallbackResponse({
     reason: 'quota',

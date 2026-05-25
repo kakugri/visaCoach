@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const interviewRoutes = require('./routes/interviewRoutes');
+const { getAiRuntimeStatus } = require('./controllers/interviewController');
 const authRoutes = require('./routes/authRoutes');
 const { verifyToken } = require('./utils/authUtils');
 const User = require('./models/User');
@@ -101,7 +102,12 @@ app.get(['/live', '/api/live'], (req, res) => {
 });
 
 app.get(['/health', '/api/health'], (req, res) => {
-  const payload = getHealthPayload({ mongoose, config, startedAt });
+  const payload = getHealthPayload({
+    mongoose,
+    config,
+    startedAt,
+    aiStatus: getAiRuntimeStatus(),
+  });
   res.status(payload.status === 'ok' ? 200 : 503).json(payload);
 });
 

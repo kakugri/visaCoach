@@ -166,7 +166,7 @@ Exit criteria:
 
 ## Milestone 6: Deployment
 
-Status: live. VisaCoach is deployed at `https://visacoach.kakugri.dev` on the Oracle Traefik stack. Backend health, MongoDB, Google login, and Gemini feedback are working in production. A non-AI production smoke script now checks the frontend shell and backend health routes without spending Gemini quota.
+Status: live. VisaCoach is deployed at `https://visacoach.kakugri.dev` on the Oracle Traefik stack. Backend health, MongoDB, Google login, and Gemini feedback are working in production. A non-AI production smoke script now checks the frontend shell and backend health routes without spending Gemini quota, and detailed health includes sanitized AI/quota runtime counters.
 
 Goal: make VisaCoach available to real users.
 
@@ -196,6 +196,7 @@ Completed hardening:
 
 - Server-side account export endpoint returns sanitized profile data and saved sessions.
 - Repo-level production smoke test covers frontend, liveness, health, and prep tips without calling Gemini.
+- Detailed health reports Gemini model, quota cooldown state, and in-memory success/fallback counts without exposing secrets or applicant answers.
 
 Remaining hardening:
 
@@ -265,5 +266,5 @@ Milestones 1 and 2 are implemented in the core no-login flow. Milestone 3 is now
 
 Immediate next build priorities:
 
-- Deploy the latest smoke-test bundle and run `npm run smoke:prod` from the production checkout.
+- Deploy the AI-runtime health update and inspect `checks.ai` after one real practice session.
 - Watch first real usage for Gemini quota pressure and account/session error rates.
