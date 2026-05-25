@@ -200,11 +200,14 @@ Completed hardening:
 - Server-side product analytics endpoint logs sanitized events and exposes aggregate in-memory counts in health.
 - Oracle monitoring runbook defines Uptime Kuma checks for frontend, liveness, health, and analytics status.
 - Production smoke passed against `https://visacoach.kakugri.dev` after deployment, including frontend shell, liveness, health, public prep tips, and analytics ingestion.
+- Latest M5/M7 polish has been deployed and production smoke passed.
+- A real production practice session validated profile readiness, personalized-question/source labeling, Gemini/fallback labeling, and saved-session history.
+- Production health checks confirmed MongoDB, AI runtime counters, and analytics events including `session_started` and `question_set_prepared`.
+- Gemini quota/provider strategy has been decided for the current beta.
+- Exposed test keys have been rotated for the current build/deploy cycle.
 
 Remaining hardening:
 
-- Rotate any exposed Gemini keys after testing.
-- Decide whether to enable paid Gemini billing or add a secondary provider.
 - Configure the Uptime Kuma monitors from `deploy/oracle-traefik/MONITORING.md`.
 
 ## Milestone 7: Question Personalization And Profile Onboarding
@@ -296,9 +299,8 @@ Purpose: make the deployed beta observable and low-drama to operate.
 - M6.3 Runtime health and analytics counters: complete.
 - M6.4 Uptime Kuma monitor setup: external next step.
   - Use `deploy/oracle-traefik/MONITORING.md`.
-- M6.5 AI quota/provider decision: pending.
-  - Decide paid Gemini billing vs secondary provider fallback.
-- M6.6 Key rotation: deferred until the end of the current build/deploy cycle.
+- M6.5 AI quota/provider decision: complete for current beta.
+- M6.6 Key rotation: complete for current build/deploy cycle.
 
 ### M7.x: Profile And Personalization
 
@@ -326,7 +328,6 @@ Purpose: avoid premature sprawl while preparing the architecture for later inter
 
 Immediate next build priorities:
 
-- Deploy latest M5/M7 polish and run production smoke.
-- Watch first real usage for Gemini quota pressure and account/session error rates.
 - Configure Uptime Kuma checks from `deploy/oracle-traefik/MONITORING.md`.
-- Rotate exposed Gemini keys at the end of the current build/deploy cycle.
+- Watch beta usage for account/session errors, confusing setup steps, and whether personalized questions outperform the static question bank.
+- Use early feedback to decide whether to deepen visa practice or begin M8 mode-architecture planning.
