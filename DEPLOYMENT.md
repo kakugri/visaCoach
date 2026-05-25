@@ -131,6 +131,10 @@ Backend requests emit structured JSON logs with:
 
 Every response includes `X-Request-Id` so a user-facing error can be matched to server logs.
 
+## Monitoring
+
+For the Oracle deployment, use the Uptime Kuma setup in [deploy/oracle-traefik/MONITORING.md](./deploy/oracle-traefik/MONITORING.md). Monitor the frontend, `/api/live`, `/api/health`, and `/api/analytics/status`.
+
 ## Pre-Deploy Checklist
 
 Run locally before each deploy:

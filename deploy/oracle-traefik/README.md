@@ -134,6 +134,8 @@ curl https://visa.yourdomain.com/api/health
 
 Look at `checks.ai.quotaCooldown`, `checks.ai.usageSinceStart`, and `checks.analytics.eventsByName`. These fields are runtime counters only; they reset when the backend container restarts and do not include secrets or applicant answers.
 
+For Uptime Kuma checks and log filters, see [MONITORING.md](./MONITORING.md).
+
 If `/api/health` returns the React HTML instead of JSON, Traefik is sending API paths to the frontend. Re-copy the latest `compose.yaml`, restart the VisaCoach containers, and inspect the backend router labels:
 
 ```bash

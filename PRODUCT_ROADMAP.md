@@ -198,12 +198,13 @@ Completed hardening:
 - Repo-level production smoke test covers frontend, liveness, health, prep tips, and analytics ingestion without calling Gemini.
 - Detailed health reports Gemini model, quota cooldown state, and in-memory success/fallback counts without exposing secrets or applicant answers.
 - Server-side product analytics endpoint logs sanitized events and exposes aggregate in-memory counts in health.
+- Oracle monitoring runbook defines Uptime Kuma checks for frontend, liveness, health, and analytics status.
 
 Remaining hardening:
 
 - Rotate any exposed Gemini keys after testing.
 - Decide whether to enable paid Gemini billing or add a secondary provider.
-- Add uptime and error monitoring beyond Docker logs.
+- Configure the Uptime Kuma monitors from `deploy/oracle-traefik/MONITORING.md`.
 
 ## Milestone 7: Question Personalization And Profile Onboarding
 
@@ -267,5 +268,5 @@ Milestones 1 and 2 are implemented in the core no-login flow. Milestone 3 is now
 
 Immediate next build priorities:
 
-- Deploy the AI-runtime health/contact/analytics update and inspect `checks.ai` plus `checks.analytics` after one real practice session.
+- Deploy the latest analytics smoke/monitoring docs and inspect `checks.ai` plus `checks.analytics` after one real practice session.
 - Watch first real usage for Gemini quota pressure and account/session error rates.
