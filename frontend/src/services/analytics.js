@@ -9,9 +9,10 @@ const sendRemoteEvent = (event) => {
 
   try {
     if (navigator.sendBeacon) {
-      const blob = new Blob([body], { type: 'application/json' });
-      navigator.sendBeacon(url, blob);
-      return;
+      const blob = new Blob([body], { type: 'text/plain' });
+      if (navigator.sendBeacon(url, blob)) {
+        return;
+      }
     }
   } catch (error) {
     // Fall through to fetch; analytics should never interrupt the product flow.

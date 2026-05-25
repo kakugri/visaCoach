@@ -195,7 +195,7 @@ Exit criteria:
 Completed hardening:
 
 - Server-side account export endpoint returns sanitized profile data and saved sessions.
-- Repo-level production smoke test covers frontend, liveness, health, and prep tips without calling Gemini.
+- Repo-level production smoke test covers frontend, liveness, health, prep tips, and analytics ingestion without calling Gemini.
 - Detailed health reports Gemini model, quota cooldown state, and in-memory success/fallback counts without exposing secrets or applicant answers.
 - Server-side product analytics endpoint logs sanitized events and exposes aggregate in-memory counts in health.
 

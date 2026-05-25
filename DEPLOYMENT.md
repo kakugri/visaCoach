@@ -173,7 +173,7 @@ For a different hostname:
 APP_URL=https://your-host.example.com npm run smoke:prod
 ```
 
-This checks the frontend app shell, `/api/live`, `/api/health`, `/health`, and public prep tips. It intentionally does not call Gemini so it does not consume the limited AI quota.
+This checks the frontend app shell, `/api/live`, `/api/health`, `/health`, public prep tips, and the sanitized analytics event endpoint. It intentionally does not call Gemini so it does not consume the limited AI quota.
 
 Then do one browser smoke pass:
 

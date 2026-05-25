@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const {
   getProductAnalyticsStatus,
   normalizeEventName,
+  parseEventBody,
   recordProductEvent,
   sanitizeProperties,
 } = require('../utils/productAnalytics');
@@ -32,6 +33,23 @@ test('sanitizeProperties keeps only allowed non-sensitive fields', () => {
     concerns: ['documentation', 'english'],
     readinessScore: 82,
   });
+});
+
+test('parseEventBody accepts JSON objects and text/plain beacon payloads', () => {
+  assert.deepEqual(parseEventBody({
+    eventName: 'session_started',
+    properties: { country: 'US' },
+  }), {
+    eventName: 'session_started',
+    properties: { country: 'US' },
+  });
+
+  assert.deepEqual(parseEventBody('{"eventName":"session_completed","properties":{"visaType":"F1"}}'), {
+    eventName: 'session_completed',
+    properties: { visaType: 'F1' },
+  });
+
+  assert.deepEqual(parseEventBody('not json'), {});
 });
 
 test('recordProductEvent returns sanitized event and updates counters', () => {

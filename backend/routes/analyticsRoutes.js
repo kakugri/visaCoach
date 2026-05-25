@@ -2,6 +2,7 @@ const express = require('express');
 const { createRateLimiter } = require('../middleware/rateLimit');
 const {
   getProductAnalyticsStatus,
+  parseEventBody,
   recordProductEvent,
 } = require('../utils/productAnalytics');
 
@@ -12,10 +13,13 @@ const analyticsRateLimit = createRateLimiter({
   max: Number(process.env.ANALYTICS_RATE_LIMIT_MAX) || 120,
 });
 
-router.post('/event', analyticsRateLimit, (req, res) => {
+const parseBeaconText = express.text({ type: 'text/plain', limit: '20kb' });
+
+router.post('/event', analyticsRateLimit, parseBeaconText, (req, res) => {
+  const body = parseEventBody(req.body);
   const event = recordProductEvent({
-    eventName: req.body?.eventName,
-    properties: req.body?.properties,
+    eventName: body.eventName,
+    properties: body.properties,
   });
 
   console.info(JSON.stringify({

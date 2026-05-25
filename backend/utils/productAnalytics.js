@@ -51,6 +51,16 @@ const sanitizeProperties = (properties = {}) => Object.entries(properties)
     return cleaned;
   }, {});
 
+const parseEventBody = (body) => {
+  if (typeof body !== 'string') return body || {};
+
+  try {
+    return JSON.parse(body);
+  } catch (error) {
+    return {};
+  }
+};
+
 const recordProductEvent = ({ eventName, properties = {}, timestamp = new Date().toISOString() }) => {
   const cleanEventName = normalizeEventName(eventName);
   const event = {
@@ -75,6 +85,7 @@ const getProductAnalyticsStatus = () => ({
 module.exports = {
   getProductAnalyticsStatus,
   normalizeEventName,
+  parseEventBody,
   recordProductEvent,
   sanitizeProperties,
 };
