@@ -8,8 +8,6 @@ function GoogleAuth({ onLoginSuccess = () => {}, onLoginError = () => {} }) {
   }
 
   const handleLoginSuccess = async (credentialResponse) => {
-    console.log('Google Login Success:', credentialResponse);
-
     try {
       // Send the token to the backend for verification
       const backendResponse = await fetch(`${API_BASE_URL}/api/auth/google`, {
@@ -22,7 +20,6 @@ function GoogleAuth({ onLoginSuccess = () => {}, onLoginError = () => {} }) {
 
       if (backendResponse.ok) {
         const data = await backendResponse.json();
-        console.log('Backend verification successful:', data);
         await onLoginSuccess(data.user, data.token);
       } else {
         const errorData = await backendResponse.json();

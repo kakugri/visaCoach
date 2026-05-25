@@ -379,6 +379,37 @@ test('shows saved session history and copies a saved summary', async ({ page, co
   await expectNoHorizontalOverflow(page);
 });
 
+test('opens profile and settings from the account dropdown', async ({ page }) => {
+  await mockSavedSessions(page);
+  await page.addInitScript(() => {
+    localStorage.setItem('token', 'test-token');
+    localStorage.setItem('user', JSON.stringify({
+      name: 'Test User',
+      email: 'test@example.com',
+    }));
+  });
+
+  await page.goto('/history');
+
+  await expect(page.getByRole('heading', { name: 'Saved Sessions' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Test User/ })).toBeVisible();
+
+  await page.getByRole('button', { name: /Test User/ }).click();
+  await expect(page.getByRole('menuitem', { name: 'Profile' })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: 'Settings' })).toBeVisible();
+
+  await page.getByRole('menuitem', { name: 'Settings' }).click();
+  await expect(page).toHaveURL(/\/settings$/);
+  await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+
+  await page.getByRole('button', { name: /Test User/ }).click();
+  await page.getByRole('menuitem', { name: 'Profile' }).click();
+  await expect(page).toHaveURL(/\/profile$/);
+  await expect(page.getByRole('heading', { name: 'Test User' })).toBeVisible();
+  await expect(page.getByText('Member since')).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
 test('migrates a local practice session after registration', async ({ page }) => {
   const migrationRequests = await mockRegistrationWithMigration(page);
 

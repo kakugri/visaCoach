@@ -60,6 +60,10 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
   const [deletingSessionId, setDeletingSessionId] = useState('');
 
   useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
+  useEffect(() => {
     const fetchAccount = async () => {
       setIsLoading(true);
       setStatusMessage('');

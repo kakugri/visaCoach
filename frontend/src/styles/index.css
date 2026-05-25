@@ -119,7 +119,8 @@ svg {
 }
 
 .user-dropdown:hover .dropdown-menu,
-.user-dropdown:focus-within .dropdown-menu {
+.user-dropdown:focus-within .dropdown-menu,
+.dropdown-menu.open {
   display: grid;
 }
 
@@ -327,6 +328,13 @@ svg {
 
   .user-dropdown {
     width: 100%;
+  }
+
+  .dropdown-menu {
+    position: static;
+    width: 100%;
+    margin-top: 8px;
+    box-shadow: none;
   }
 
   .auth-card {
