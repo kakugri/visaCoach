@@ -23,7 +23,7 @@ const getRuntimeConfig = (env = process.env) => ({
   mongoUriSet: Boolean(env.MONGODB_URI),
   jwtSecretSet: Boolean(env.JWT_SECRET),
   geminiKeySet: Boolean(env.GEMINI_API_KEY),
-  geminiModel: env.GEMINI_MODEL || 'gemini-2.5-flash',
+  geminiModel: env.GEMINI_MODEL || 'gemini-2.5-flash-lite',
   googleClientIdSet: Boolean(env.GOOGLE_CLIENT_ID || env.REACT_APP_GOOGLE_CLIENT_ID),
   aiRateLimitWindowMs: parseInteger(env.AI_RATE_LIMIT_WINDOW_MS, 60_000),
   aiRateLimitMax: parseInteger(env.AI_RATE_LIMIT_MAX, 20),

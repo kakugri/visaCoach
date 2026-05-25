@@ -32,7 +32,7 @@ test('getRuntimeConfig parses deployment env without exposing secrets', () => {
     MONGODB_URI: 'mongodb+srv://secret',
     JWT_SECRET: 'secret',
     GEMINI_API_KEY: 'secret',
-    GEMINI_MODEL: 'gemini-2.5-flash',
+    GEMINI_MODEL: 'gemini-2.5-flash-lite',
     GOOGLE_CLIENT_ID: 'google-client-id',
     AI_RATE_LIMIT_WINDOW_MS: '120000',
     AI_RATE_LIMIT_MAX: '10',

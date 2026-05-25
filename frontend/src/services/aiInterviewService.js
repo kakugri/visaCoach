@@ -95,6 +95,8 @@ export const aiInterviewService = {
       return {
         text: response.data.response,
         source: response.data.source || 'gemini',
+        sourceReason: response.data.sourceReason,
+        retryAfterSeconds: response.data.retryAfterSeconds,
         model: response.data.model,
         feedback: response.data.feedback,
       };
@@ -104,6 +106,7 @@ export const aiInterviewService = {
         text: localText.text,
         feedback: localText.feedback,
         source: 'local',
+        sourceReason: 'network',
       };
     }
   },

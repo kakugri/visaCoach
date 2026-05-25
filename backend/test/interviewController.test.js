@@ -97,3 +97,30 @@ test('buildLocalFeedback returns structured fallback fields', () => {
   assert.match(local.feedback.mainFix, /join my employer in Ghana/);
   assert.match(local.feedback.consistencyCheck, /family sponsor and savings/);
 });
+
+test('getGeminiRetryDelayMs reads retry delay from quota errors', () => {
+  const retryMs = _test.getGeminiRetryDelayMs({
+    status: 429,
+    errorDetails: [{ retryDelay: '39s' }],
+  });
+
+  assert.equal(retryMs, 39_000);
+});
+
+test('buildFallbackResponse marks quota fallback metadata', () => {
+  const fallback = _test.buildFallbackResponse({
+    reason: 'quota',
+    retryAfterSeconds: 39,
+    body: {
+      question: 'What are your plans after completing your studies?',
+      userAnswer: 'return home',
+      country: 'US',
+      visaType: 'F1',
+    },
+  });
+
+  assert.equal(fallback.source, 'local');
+  assert.equal(fallback.sourceReason, 'quota');
+  assert.equal(fallback.retryAfterSeconds, 39);
+  assert.equal(fallback.model, 'local-fallback');
+});

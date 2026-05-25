@@ -403,6 +403,8 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack }) {
       // Update history with agent's response
       newHistory[newHistory.length - 1].agentResponse = responseText;
       newHistory[newHistory.length - 1].feedbackSource = typeof feedback === 'string' ? 'unknown' : feedback.source;
+      newHistory[newHistory.length - 1].feedbackSourceReason = typeof feedback === 'string' ? '' : feedback.sourceReason;
+      newHistory[newHistory.length - 1].feedbackRetryAfterSeconds = typeof feedback === 'string' ? 0 : feedback.retryAfterSeconds;
       newHistory[newHistory.length - 1].feedbackModel = typeof feedback === 'string' ? '' : feedback.model;
       newHistory[newHistory.length - 1].feedbackStyle = feedbackLevel;
       newHistory[newHistory.length - 1].feedback = typeof feedback === 'string' ? null : feedback.feedback;
@@ -901,7 +903,7 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack }) {
                           : item.feedbackSource === 'gemini'
                           ? `Gemini${item.feedbackModel ? ` · ${item.feedbackModel}` : ''}`
                           : item.feedbackSource === 'local'
-                            ? 'Local fallback'
+                            ? `Local fallback${item.feedbackSourceReason === 'quota' || item.feedbackSourceReason === 'quota_cooldown' ? ' · Gemini quota' : ''}`
                             : 'Feedback'}
                       </span>
                       {item.feedbackStyle === 'realistic' ? (

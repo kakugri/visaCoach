@@ -4,8 +4,10 @@ require('dotenv').config();
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-2.5-flash" });
-const ACTIVE_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash-lite";
+const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL });
+const ACTIVE_MODEL = process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
+let geminiQuotaBlockedUntil = 0;
 
 const PROMPT_PROFILES = {
   f1Student: {
@@ -161,6 +163,42 @@ const buildLocalFeedback = ({ question, userAnswer, country, visaType, sessionCo
   };
 };
 
+const getGeminiRetryDelayMs = (error) => {
+  const retryInfo = error?.errorDetails?.find((detail) => detail.retryDelay);
+  const retryDelay = normalizeString(retryInfo?.retryDelay);
+  const seconds = Number.parseFloat(retryDelay.replace(/s$/, ""));
+
+  if (Number.isFinite(seconds) && seconds > 0) {
+    return Math.ceil(seconds * 1000);
+  }
+
+  return 60_000;
+};
+
+const isQuotaError = (error) => error?.status === 429 || /quota|too many requests|rate limit/i.test(error?.message || "");
+
+const buildFallbackResponse = ({ body, isRealistic = false, reason = "error", retryAfterSeconds = 0 }) => {
+  if (isRealistic) {
+    return {
+      response: "Thank you. Please be ready to explain that with one concrete detail if asked.",
+      source: "local",
+      sourceReason: reason,
+      retryAfterSeconds,
+      model: "local-fallback",
+    };
+  }
+
+  const localFeedback = buildLocalFeedback(body);
+
+  return {
+    ...localFeedback,
+    source: "local",
+    sourceReason: reason,
+    retryAfterSeconds,
+    model: "local-fallback",
+  };
+};
+
 const validateAgentRequest = (body = {}) => {
   const fields = {
     question: normalizeString(body.question),
@@ -284,6 +322,15 @@ const getAgentResponse = async (req, res) => {
       feedbackStyle,
       sessionContext,
     });
+
+    if (geminiQuotaBlockedUntil > Date.now()) {
+      return res.status(200).json(buildFallbackResponse({
+        body: req.body,
+        isRealistic,
+        reason: "quota_cooldown",
+        retryAfterSeconds: Math.ceil((geminiQuotaBlockedUntil - Date.now()) / 1000),
+      }));
+    }
     
     // const completion = await openai.createCompletion({
     //   model: "gpt-4", // or other appropriate model
@@ -316,21 +363,18 @@ const getAgentResponse = async (req, res) => {
   } catch (error) {
     console.error('Error in AI response:', error);
     if (req.body?.question && req.body?.userAnswer && req.body?.country && req.body?.visaType) {
-      if (req.body.feedbackStyle === "realistic") {
-        return res.status(200).json({
-          response: "Thank you. Please be ready to explain that with one concrete detail if asked.",
-          source: "local",
-          model: "local-fallback",
-        });
+      const retryDelayMs = isQuotaError(error) ? getGeminiRetryDelayMs(error) : 0;
+
+      if (retryDelayMs) {
+        geminiQuotaBlockedUntil = Date.now() + retryDelayMs;
       }
 
-      const localFeedback = buildLocalFeedback(req.body);
-
-      return res.status(200).json({
-        ...localFeedback,
-        source: "local",
-        model: "local-fallback",
-      });
+      return res.status(200).json(buildFallbackResponse({
+        body: req.body,
+        isRealistic: req.body.feedbackStyle === "realistic",
+        reason: retryDelayMs ? "quota" : "error",
+        retryAfterSeconds: Math.ceil(retryDelayMs / 1000),
+      }));
     }
 
     res.status(500).json({ error: "Failed to generate response" });
@@ -473,10 +517,13 @@ module.exports = {
   _test: {
     buildAgentPrompt,
     buildContextBlock,
+    buildFallbackResponse,
     buildLocalFeedback,
     extractJson,
     feedbackToMarkdown,
+    getGeminiRetryDelayMs,
     getPromptProfile,
+    isQuotaError,
     normalizeFeedback,
     validateAgentRequest,
   },
