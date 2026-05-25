@@ -115,6 +115,15 @@ curl https://visa.yourdomain.com/api/health
 
 `/api/live` should return `200` whenever the backend process is running. `/api/health` can return `503` with `status: "degraded"` if MongoDB is unreachable.
 
+From the source checkout, you can also run:
+
+```bash
+cd /opt/docker/apps/visacoach/source
+APP_URL=https://visa.yourdomain.com npm run smoke:prod
+```
+
+This smoke test avoids Gemini calls so it does not spend AI quota.
+
 If `/api/health` returns the React HTML instead of JSON, Traefik is sending API paths to the frontend. Re-copy the latest `compose.yaml`, restart the VisaCoach containers, and inspect the backend router labels:
 
 ```bash

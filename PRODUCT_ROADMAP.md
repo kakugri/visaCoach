@@ -39,6 +39,8 @@ Status: complete.
 
 Goal: make questions and feedback more personalized without turning the app into a long form.
 
+Design decision: keep the confidence slider as a self-assessment signal. It is sent to question generation and feedback prompts, saved with the session, and shown as a before/after confidence comparison in summaries. It should not be treated as an approval-readiness score by itself.
+
 Deliverables:
 
 - Add a short pre-session intake:
@@ -164,7 +166,7 @@ Exit criteria:
 
 ## Milestone 6: Deployment
 
-Status: live. VisaCoach is deployed at `https://visacoach.kakugri.dev` on the Oracle Traefik stack. Backend health, MongoDB, Google login, and Gemini feedback are working in production.
+Status: live. VisaCoach is deployed at `https://visacoach.kakugri.dev` on the Oracle Traefik stack. Backend health, MongoDB, Google login, and Gemini feedback are working in production. A non-AI production smoke script now checks the frontend shell and backend health routes without spending Gemini quota.
 
 Goal: make VisaCoach available to real users.
 
@@ -193,6 +195,7 @@ Exit criteria:
 Completed hardening:
 
 - Server-side account export endpoint returns sanitized profile data and saved sessions.
+- Repo-level production smoke test covers frontend, liveness, health, and prep tips without calling Gemini.
 
 Remaining hardening:
 
@@ -262,5 +265,5 @@ Milestones 1 and 2 are implemented in the core no-login flow. Milestone 3 is now
 
 Immediate next build priorities:
 
-- Do one final production smoke pass after deploying the latest build.
+- Deploy the latest smoke-test bundle and run `npm run smoke:prod` from the production checkout.
 - Watch first real usage for Gemini quota pressure and account/session error rates.

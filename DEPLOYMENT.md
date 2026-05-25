@@ -153,6 +153,30 @@ Confirm:
 - Login/register works.
 - A no-login session migrates into saved history after signup/login.
 
+## Production Smoke Test
+
+After deploying, run the non-AI smoke test from the repo root:
+
+```bash
+npm run smoke:prod
+```
+
+For a different hostname:
+
+```bash
+APP_URL=https://your-host.example.com npm run smoke:prod
+```
+
+This checks the frontend app shell, `/api/live`, `/api/health`, `/health`, and public prep tips. It intentionally does not call Gemini so it does not consume the limited AI quota.
+
+Then do one browser smoke pass:
+
+- Start a no-login practice session.
+- Confirm the question source label is visible.
+- Submit one short answer and confirm the feedback source label is visible.
+- Sign in or register and confirm saved history loads.
+- Delete the test saved session.
+
 ## Rollback
 
 - Keep the previous frontend build/deployment available if the host supports instant rollback.

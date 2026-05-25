@@ -6,7 +6,8 @@
         "start": "npm run start:env && concurrently \"npm run start:frontend\" \"npm run start:backend\"",
         "start:frontend": "cd frontend && npm start",
         "start:backend": "cd backend && node server.js",
-        "start:env": "cp .env backend/.env"
+        "start:env": "cp .env backend/.env",
+        "smoke:prod": "bash scripts/smoke-production.sh"
     },
     "devDependencies": {
         "concurrently": "^9.1.2"
