@@ -57,6 +57,7 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(initialTab);
   const [statusMessage, setStatusMessage] = useState('');
+  const [deletingSessionId, setDeletingSessionId] = useState('');
 
   useEffect(() => {
     const fetchAccount = async () => {
@@ -119,6 +120,55 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
     } catch (error) {
       console.error('Unable to copy saved session:', error);
       setStatusMessage('Clipboard was unavailable.');
+    }
+  };
+
+  const handleDeleteSession = async (session) => {
+    const savedSessionId = session.sessionId || session._id;
+
+    if (!savedSessionId) {
+      setStatusMessage('This saved session cannot be deleted because it is missing an ID.');
+      return;
+    }
+
+    const confirmed = window.confirm('Delete this saved practice session? This cannot be undone.');
+    if (!confirmed) return;
+
+    setDeletingSessionId(savedSessionId);
+    setStatusMessage('');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/interview/history/${encodeURIComponent(savedSessionId)}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Delete failed');
+      }
+
+      setSessions((currentSessions) => currentSessions.filter((item) => (
+        item.sessionId !== savedSessionId && item._id !== savedSessionId
+      )));
+      setStatusMessage('Saved session deleted.');
+
+      try {
+        const lastSession = JSON.parse(localStorage.getItem('visaCoach:lastSession') || '{}');
+        if (lastSession.sessionId === savedSessionId) {
+          localStorage.removeItem('visaCoach:lastSession');
+        }
+      } catch (error) {
+        console.error('Unable to clear deleted local session:', error);
+      }
+    } catch (error) {
+      console.error('Unable to delete saved session:', error);
+      setStatusMessage('Saved session could not be deleted.');
+    } finally {
+      setDeletingSessionId('');
     }
   };
 
@@ -254,6 +304,13 @@ const ProfilePage = ({ initialTab = 'sessions' }) => {
                 <div className="session-actions">
                   <button className="btn btn-outline" onClick={() => handleCopySession(session)}>Copy Summary</button>
                   <button className="btn btn-primary" onClick={() => navigate('/interview')}>Practice Again</button>
+                  <button
+                    className="btn btn-danger"
+                    onClick={() => handleDeleteSession(session)}
+                    disabled={deletingSessionId === (session.sessionId || session._id)}
+                  >
+                    {deletingSessionId === (session.sessionId || session._id) ? 'Deleting...' : 'Delete Session'}
+                  </button>
                 </div>
               </article>
             );

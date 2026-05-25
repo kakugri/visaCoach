@@ -30,6 +30,33 @@ router.get('/history', authMiddleware, async (req, res) => {
   }
 });
 
+router.delete('/history/:sessionId', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const { sessionId } = req.params;
+    const initialCount = user.interviewHistory.length;
+    user.interviewHistory = user.interviewHistory.filter((session) => (
+      session.sessionId !== sessionId && String(session._id) !== sessionId
+    ));
+
+    if (user.interviewHistory.length === initialCount) {
+      return res.status(404).json({ error: 'Saved session not found' });
+    }
+
+    await user.save();
+
+    res.status(200).json({ message: 'Saved session deleted', sessionId });
+  } catch (error) {
+    console.error('Error deleting interview history:', error);
+    res.status(500).json({ error: 'Failed to delete saved session' });
+  }
+});
+
 router.post('/save-history', authMiddleware, async (req, res) => {
   try {
     const {

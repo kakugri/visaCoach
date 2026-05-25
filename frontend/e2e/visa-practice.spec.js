@@ -77,6 +77,8 @@ const mockStructuredFeedback = async (page) => {
 };
 
 const mockSavedSessions = async (page) => {
+  let deleted = false;
+
   await page.route('**/api/auth/profile', async (route) => {
     await route.fulfill({
       contentType: 'application/json',
@@ -90,11 +92,20 @@ const mockSavedSessions = async (page) => {
   });
 
   await page.route('**/api/interview/history', async (route) => {
+    if (deleted) {
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+      return;
+    }
+
     await route.fulfill({
       contentType: 'application/json',
       body: JSON.stringify([
         {
           _id: 'session-1',
+          sessionId: 'session-1',
           date: '2026-05-24T12:30:00.000Z',
           country: 'US',
           visaType: 'F1',
@@ -120,6 +131,19 @@ const mockSavedSessions = async (page) => {
           ],
         },
       ]),
+    });
+  });
+
+  await page.route('**/api/interview/history/session-1', async (route) => {
+    if (route.request().method() !== 'DELETE') {
+      await route.fallback();
+      return;
+    }
+
+    deleted = true;
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({ message: 'Saved session deleted', sessionId: 'session-1' }),
     });
   });
 };
@@ -254,7 +278,7 @@ test('renders the visa practice landing screen', async ({ page }) => {
   await page.goto('/');
 
   await expect(page.getByRole('heading', { name: /Practice a Visa Interview/i })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Start Practice' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Choose Visa Path' })).toBeVisible();
   await expect(page.getByText('Practice support only')).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
@@ -344,6 +368,14 @@ test('shows saved session history and copies a saved summary', async ({ page, co
   const savedSummary = await page.evaluate(() => navigator.clipboard.readText());
   expect(savedSummary).toContain('VisaCoach Saved Session');
   expect(savedSummary).toContain('US');
+
+  page.once('dialog', async (dialog) => {
+    expect(dialog.message()).toContain('Delete this saved practice session');
+    await dialog.accept();
+  });
+  await page.getByRole('button', { name: 'Delete Session' }).click();
+  await expect(page.getByText('Saved session deleted.')).toBeVisible();
+  await expect(page.getByText('No saved sessions yet')).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 

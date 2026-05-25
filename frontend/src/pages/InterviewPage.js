@@ -158,7 +158,7 @@ function InterviewPage() {
                   </div>
                 </div>
                 <div className="hero-actions">
-                  <button className="btn btn-cta" onClick={scrollToSelection}>Start Practice</button>
+                  <button className="btn btn-cta" onClick={scrollToSelection}>Choose Visa Path</button>
                   {!isLoggedIn && (
                     <button className="btn btn-secondary-cta" onClick={() => navigate('/register')}>
                       Create Profile First

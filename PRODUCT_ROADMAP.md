@@ -114,11 +114,13 @@ Deliverables:
   - questions answered
   - top improvement areas
   - copied/exported summary
+  - delete saved session
 - Remove premium/upgrade language until there is a real monetization plan.
 
 Exit criteria:
 
 - Logged-in users can see real saved history.
+- Logged-in users can delete saved sessions.
 - Logged-out users can still complete a session.
 - The profile area no longer contains mock/premium dashboard artifacts.
 
@@ -131,6 +133,7 @@ Goal: make the app feel credible enough to share publicly.
 Deliverables:
 
 - Simplify the prep screen into a compact setup panel.
+- Keep homepage calls to action clear: choosing a visa path starts setup, not the interview itself.
 - Make the interview screen feel like a focused practice console.
 - Clean legacy files and CSS:
   - old landing page
