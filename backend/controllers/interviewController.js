@@ -51,6 +51,78 @@ const CONTEXT_LABELS = {
   notes: "application notes",
 };
 
+const SESSION_QUESTION_LIMIT = 5;
+
+const QUESTION_BANK = {
+  US: {
+    F1: [
+      "What are your plans after completing your studies in the US?",
+      "Why did you choose to study in the United States instead of your home country or other countries?",
+      "How will you finance your education and living expenses while in the US?",
+      "What is your intended major of study and why did you choose this field?",
+      "Have you researched your university's location? Where do you plan to stay?",
+      "Can you describe your academic background and how it relates to your chosen field of study?",
+      "Do you have family members currently in the United States?",
+      "How will this degree help your career when you return to your home country?",
+      "Have you taken the TOEFL or IELTS? What was your score?",
+      "Have you been offered any scholarships or financial aid?",
+      "What specific classes or projects are you looking forward to at your university?",
+      "Have you traveled to the US before? If so, when and for what purpose?",
+    ],
+    "B1/B2": [
+      "What is the purpose of your visit to the United States?",
+      "How long do you plan to stay in the US?",
+      "Where will you be staying during your visit?",
+      "Have you visited the United States before?",
+      "Who will you be visiting in the United States?",
+      "What is your occupation in your home country?",
+      "How will your responsibilities be handled while you're away?",
+      "How are you financing this trip?",
+      "What ties do you have to your home country that will ensure your return?",
+      "Do you have family members in the United States?",
+      "What places do you plan to visit during your stay?",
+    ],
+  },
+  CA: {
+    student: [
+      "Why have you chosen to study in Canada?",
+      "How will your studies in Canada benefit your future career?",
+      "How do you plan to finance your studies and living expenses in Canada?",
+      "Why did you choose this specific institution and program?",
+      "What are your plans after completing your studies in Canada?",
+      "Do you have family members currently in Canada?",
+      "Have you researched the city where your institution is located?",
+      "How does this program relate to your previous education or work experience?",
+      "Have you applied for a Canadian study permit before?",
+      "Do you plan to work part-time during your studies?",
+      "How do educational options in Canada compare to those in your home country?",
+    ],
+  },
+  UK: {
+    student: [
+      "Why do you want to study in the UK?",
+      "How will you support yourself financially during your studies?",
+      "What are your plans after completing your course in the UK?",
+      "Why did you choose this specific institution and course?",
+      "How does this course relate to your previous education?",
+      "What are your career goals and how will this course help you achieve them?",
+      "Have you previously studied or applied to study in the UK?",
+      "Do you have family members currently in the UK?",
+      "How will you accommodate yourself during your studies?",
+      "Have you taken an English language test? What was your score?",
+      "How do educational options in the UK compare to those in your home country?",
+    ],
+  },
+};
+
+const GENERIC_VISA_QUESTIONS = [
+  "What is the purpose of your trip or visa application?",
+  "Why did you choose this destination instead of another country?",
+  "How will you fund your stay, studies, or planned activities?",
+  "What ties do you have to your home country or current country of residence?",
+  "What are your plans after the visa period ends?",
+];
+
 const normalizeString = (value) => (typeof value === "string" ? value.trim() : "");
 
 const getPromptProfile = (country, visaType) => {
@@ -126,6 +198,48 @@ const normalizeFeedback = (feedback = {}) => ({
   followUpQuestion: normalizeString(feedback.followUpQuestion),
 });
 
+const normalizeQuestions = (questions = []) => {
+  const seen = new Set();
+
+  return questions
+    .map(normalizeString)
+    .filter((question) => question.length >= 12)
+    .filter((question) => {
+      const key = question.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, SESSION_QUESTION_LIMIT);
+};
+
+const getQuestionBank = (country, visaType) => (
+  QUESTION_BANK[normalizeString(country)]?.[normalizeString(visaType)] || GENERIC_VISA_QUESTIONS
+);
+
+const buildLocalQuestions = ({ country, visaType, sessionContext = {} }) => {
+  const context = sessionContext.context || {};
+  const contextQuestions = [
+    context.institutionOrHost
+      ? `Why did you choose ${context.institutionOrHost}, and how does it fit your visa purpose?`
+      : "",
+    context.programOrPurpose
+      ? `How does ${context.programOrPurpose} connect to your background and future plans?`
+      : "",
+    context.fundingSource
+      ? `How will ${context.fundingSource} cover the costs connected to this visa?`
+      : "",
+    context.returnPlan
+      ? `How does this visa support your plan to ${context.returnPlan}?`
+      : "",
+  ];
+
+  return normalizeQuestions([
+    ...contextQuestions,
+    ...getQuestionBank(country, visaType),
+  ]);
+};
+
 const feedbackToMarkdown = (feedback) => [
   feedback.quickRead ? `**Quick read:** ${feedback.quickRead}` : "",
   feedback.mainFix ? `**Main fix:** ${feedback.mainFix}` : "",
@@ -198,6 +312,14 @@ const buildFallbackResponse = ({ body, isRealistic = false, reason = "error", re
     model: "local-fallback",
   };
 };
+
+const buildFallbackQuestionsResponse = ({ body, reason = "local", retryAfterSeconds = 0 }) => ({
+  questions: buildLocalQuestions(body),
+  source: "local",
+  sourceReason: reason,
+  retryAfterSeconds,
+  model: "local-question-bank",
+});
 
 const validateAgentRequest = (body = {}) => {
   const fields = {
@@ -282,6 +404,48 @@ Rules:
 - Do not provide legal advice.
 - Do not repeat the full applicant answer.
 - Do not include Markdown or code fences.`;
+};
+
+const buildQuestionPrompt = ({
+  country,
+  visaType,
+  sessionContext = {},
+}) => {
+  const contextBlock = buildContextBlock(sessionContext);
+  const promptProfile = getPromptProfile(country, visaType);
+  const fallbackQuestions = getQuestionBank(country, visaType).slice(0, 8).map((question) => `- ${question}`).join("\n");
+
+  return `You are preparing a short visa interview practice session.
+
+Destination country: ${country}
+Visa type: ${visaType}
+Visa prompt profile: ${promptProfile.label}
+Officer focus: ${promptProfile.roleFocus}
+
+Applicant context:
+${contextBlock}
+
+Use these common questions as coverage guidance, but personalize when context is available:
+${fallbackQuestions}
+
+Return only valid JSON with this exact shape:
+{
+  "questions": [
+    "Question 1",
+    "Question 2",
+    "Question 3",
+    "Question 4",
+    "Question 5"
+  ]
+}
+
+Rules:
+- Return exactly five questions.
+- Each question should sound like something a visa officer might ask.
+- Cover purpose, funding, destination/program fit, return or home ties, and consistency with documents.
+- If applicant context is provided, make at least two questions specific to that context.
+- Do not ask for private passwords, bank account numbers, or full document uploads.
+- Do not include Markdown or explanations.`;
 };
 
 // const configuration = new Configuration({
@@ -378,6 +542,61 @@ const getAgentResponse = async (req, res) => {
     }
 
     res.status(500).json({ error: "Failed to generate response" });
+  }
+};
+
+const getInterviewQuestions = async (req, res) => {
+  try {
+    const country = normalizeString(req.body?.country);
+    const visaType = normalizeString(req.body?.visaType);
+    const sessionContext = req.body?.sessionContext || {};
+
+    if (!country || !visaType) {
+      return res.status(400).json({
+        error: "country and visaType are required",
+        missing: [
+          ...(!country ? ["country"] : []),
+          ...(!visaType ? ["visaType"] : []),
+        ],
+      });
+    }
+
+    if (geminiQuotaBlockedUntil > Date.now()) {
+      return res.status(200).json(buildFallbackQuestionsResponse({
+        body: { country, visaType, sessionContext },
+        reason: "quota_cooldown",
+        retryAfterSeconds: Math.ceil((geminiQuotaBlockedUntil - Date.now()) / 1000),
+      }));
+    }
+
+    const prompt = buildQuestionPrompt({ country, visaType, sessionContext });
+    const result = await model.generateContent(prompt);
+    const rawText = result.response.text().trim();
+    const parsed = extractJson(rawText);
+    const questions = normalizeQuestions(parsed.questions);
+
+    if (questions.length !== SESSION_QUESTION_LIMIT) {
+      throw new Error("Gemini returned an invalid question set");
+    }
+
+    res.json({
+      questions,
+      source: "gemini",
+      model: ACTIVE_MODEL,
+    });
+  } catch (error) {
+    console.error('Error generating interview questions:', error);
+    const retryDelayMs = isQuotaError(error) ? getGeminiRetryDelayMs(error) : 0;
+
+    if (retryDelayMs) {
+      geminiQuotaBlockedUntil = Date.now() + retryDelayMs;
+    }
+
+    res.status(200).json(buildFallbackQuestionsResponse({
+      body: req.body || {},
+      reason: retryDelayMs ? "quota" : "error",
+      retryAfterSeconds: Math.ceil(retryDelayMs / 1000),
+    }));
   }
 };
 
@@ -512,16 +731,21 @@ const getCommonMistakes = async (req, res) => {
 
 module.exports = {
   getAgentResponse,
+  getInterviewQuestions,
   getPreInterviewTips,
   getCommonMistakes,
   _test: {
     buildAgentPrompt,
     buildContextBlock,
+    buildFallbackQuestionsResponse,
     buildFallbackResponse,
     buildLocalFeedback,
+    buildLocalQuestions,
+    buildQuestionPrompt,
     extractJson,
     feedbackToMarkdown,
     getGeminiRetryDelayMs,
+    normalizeQuestions,
     getPromptProfile,
     isQuotaError,
     normalizeFeedback,

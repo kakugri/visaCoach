@@ -26,6 +26,23 @@ const mockPrepApis = async (page) => {
       body: JSON.stringify(['Giving vague answers', 'Forgetting document consistency']),
     });
   });
+
+  await page.route('**/api/interview/questions', async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        questions: [
+          'Generated question 1: What are your plans after completing your studies?',
+          'Generated question 2: Why did you choose this university?',
+          'Generated question 3: How will you fund your studies?',
+          'Generated question 4: How does this program fit your background?',
+          'Generated question 5: What ties support your return plan?',
+        ],
+        source: 'gemini',
+        model: 'test-question-model',
+      }),
+    });
+  });
 };
 
 const mockStructuredFeedback = async (page) => {
@@ -261,6 +278,7 @@ test('starts a practice session from the prep screen', async ({ page }) => {
 
   await expect(page.getByText('Welcome to your practice session')).toBeVisible();
   await expect(page.getByText('Question 1 of 5')).toBeVisible();
+  await expect(page.getByText('Questions: Gemini · test-question-model')).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 

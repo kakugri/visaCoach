@@ -44,6 +44,11 @@ const userSchema = new mongoose.Schema({
     },
     concerns: [{ type: String }],
     feedbackLevel: { type: String },
+    questionSet: {
+      source: { type: String },
+      sourceReason: { type: String },
+      model: { type: String },
+    },
     stats: {
       overallScore: { type: Number },
       strongAreas: [{ type: String }],

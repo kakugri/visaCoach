@@ -123,6 +123,13 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack }) {
   const [userNeeds, setUserNeeds] = useState([]);
   const [sessionContext, setSessionContext] = useState(DEFAULT_SESSION_CONTEXT);
   const [feedbackLevel, setFeedbackLevel] = useState('detailed');
+  const [usePersonalizedQuestions, setUsePersonalizedQuestions] = useState(true);
+  const [isPreparingQuestions, setIsPreparingQuestions] = useState(false);
+  const [questionSetMeta, setQuestionSetMeta] = useState({
+    source: 'local',
+    sourceReason: 'static',
+    model: 'local-question-bank',
+  });
   const [interviewStats, setInterviewStats] = useState({
     strongAreas: [],
     improvementAreas: [],
@@ -298,6 +305,11 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack }) {
 
     const questions = questionSets[selectedCountry]?.[selectedVisaType] || genericVisaQuestions;
     setInterviewQuestions(questions.slice(0, SESSION_QUESTION_LIMIT));
+    setQuestionSetMeta({
+      source: 'local',
+      sourceReason: 'static',
+      model: 'local-question-bank',
+    });
     setAgentResponse('');
   };
 
@@ -466,12 +478,51 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack }) {
     }
   };
 
-  const startInterview = () => {
+  const startInterview = async () => {
     const nextSessionId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const cleanContext = getCleanSessionContext();
+
+    setIsPreparingQuestions(true);
+    setFeedbackMessage('');
+
+    let nextQuestionSetMeta = {
+      source: 'local',
+      sourceReason: usePersonalizedQuestions ? 'error' : 'static',
+      model: 'local-question-bank',
+    };
+
+    if (usePersonalizedQuestions) {
+      const generatedQuestionSet = await aiInterviewService.generateQuestions(
+        selectedCountry,
+        selectedVisaType,
+        {
+          confidence: userConfidence,
+          concerns: userNeeds,
+          context: cleanContext,
+        }
+      );
+
+      if (generatedQuestionSet.questions.length) {
+        setInterviewQuestions(generatedQuestionSet.questions.slice(0, SESSION_QUESTION_LIMIT));
+      }
+
+      nextQuestionSetMeta = {
+        source: generatedQuestionSet.source,
+        sourceReason: generatedQuestionSet.sourceReason,
+        retryAfterSeconds: generatedQuestionSet.retryAfterSeconds,
+        model: generatedQuestionSet.model,
+      };
+    }
+
+    setQuestionSetMeta(nextQuestionSetMeta);
     setSessionId(nextSessionId);
     firstAnswerTrackedRef.current = false;
+    setConversationHistory([]);
+    setCurrentQuestionIndex(0);
+    setInterviewComplete(false);
     setShowPrep(false);
     setPostSessionConfidence(userConfidence);
+    setIsPreparingQuestions(false);
     trackEvent('session_started', {
       sessionId: nextSessionId,
       country: selectedCountry,
@@ -479,6 +530,7 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack }) {
       feedbackLevel,
       confidence: userConfidence,
       concerns: userNeeds,
+      questionSource: nextQuestionSetMeta.source,
     });
     setAgentResponse("Welcome to your practice session. I will ask five visa interview-style questions. Answer honestly and concretely, as you would at the appointment.");
   };
@@ -506,6 +558,7 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack }) {
       visaType: selectedVisaType,
       interviewHistory: history,
       stats: statsData,
+      questionSet: questionSetMeta,
       sessionContext: getCleanSessionContext(),
       confidence: {
         before: userConfidence,
@@ -629,6 +682,15 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack }) {
         <div className="interview-info">
           <span className="badge country-badge">{selectedCountry}</span>
           <span className="badge visa-badge">{selectedVisaType}</span>
+          {!showPrep && (
+            <span className={`badge question-source-badge ${questionSetMeta.source || 'local'}`}>
+              Questions: {questionSetMeta.source === 'gemini'
+                ? `Gemini${questionSetMeta.model ? ` · ${questionSetMeta.model}` : ''}`
+                : questionSetMeta.sourceReason === 'quota' || questionSetMeta.sourceReason === 'quota_cooldown'
+                  ? 'Question bank · Gemini quota'
+                  : 'Question bank'}
+            </span>
+          )}
         </div>
         <button className="back-button" onClick={onGoBack}>
           ← Back to Selection
@@ -767,6 +829,19 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack }) {
           </div>
           
           <div className="prep-section">
+            <h4>Question set</h4>
+            <label className="custom-checkbox">
+              <input
+                type="checkbox"
+                checked={usePersonalizedQuestions}
+                onChange={() => setUsePersonalizedQuestions(prev => !prev)}
+              />
+              <span className="checkmark"></span>
+              Personalize questions with my context
+            </label>
+          </div>
+
+          <div className="prep-section">
             <h4>How detailed would you like the feedback to be?</h4>
             <div className="feedback-radios">
               <label className="custom-radio">
@@ -854,8 +929,8 @@ function InterviewScreen({ selectedCountry, selectedVisaType, onGoBack }) {
             </div>
           </div>
           
-          <button className="start-interview-button" onClick={startInterview}>
-            Start Interview Simulation
+          <button className="start-interview-button" onClick={startInterview} disabled={isPreparingQuestions}>
+            {isPreparingQuestions ? 'Preparing questions...' : 'Start Interview Simulation'}
           </button>
         </div>
       ) : (

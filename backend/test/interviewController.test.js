@@ -98,6 +98,42 @@ test('buildLocalFeedback returns structured fallback fields', () => {
   assert.match(local.feedback.consistencyCheck, /family sponsor and savings/);
 });
 
+test('buildQuestionPrompt asks for exactly five contextual questions', () => {
+  const prompt = _test.buildQuestionPrompt({
+    country: 'US',
+    visaType: 'F1',
+    sessionContext: {
+      context: {
+        institutionOrHost: 'University of Texas',
+        programOrPurpose: 'MS Computer Science',
+        fundingSource: 'family sponsor',
+        returnPlan: 'work in Ghana',
+      },
+    },
+  });
+
+  assert.match(prompt, /Return exactly five questions/);
+  assert.match(prompt, /University of Texas/);
+  assert.match(prompt, /purpose, funding/);
+});
+
+test('buildLocalQuestions personalizes question bank with context', () => {
+  const questions = _test.buildLocalQuestions({
+    country: 'US',
+    visaType: 'F1',
+    sessionContext: {
+      context: {
+        institutionOrHost: 'University of Texas',
+        fundingSource: 'family sponsor',
+      },
+    },
+  });
+
+  assert.equal(questions.length, 5);
+  assert.match(questions[0], /University of Texas/);
+  assert.match(questions[1], /family sponsor/);
+});
+
 test('getGeminiRetryDelayMs reads retry delay from quota errors', () => {
   const retryMs = _test.getGeminiRetryDelayMs({
     status: 429,

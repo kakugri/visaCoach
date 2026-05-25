@@ -75,6 +75,34 @@ const getLocalFeedback = (question, userAnswer, country, visaType, sessionContex
 };
 
 export const aiInterviewService = {
+  async generateQuestions(country, visaType, sessionContext = {}) {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/interview/questions`, {
+        country,
+        visaType,
+        sessionContext,
+      }, {
+        headers: buildAuthHeaders()
+      });
+
+      return {
+        questions: Array.isArray(response.data.questions) ? response.data.questions : [],
+        source: response.data.source || 'gemini',
+        sourceReason: response.data.sourceReason,
+        retryAfterSeconds: response.data.retryAfterSeconds,
+        model: response.data.model,
+      };
+    } catch (error) {
+      console.error('Error generating interview questions:', error);
+      return {
+        questions: [],
+        source: 'local',
+        sourceReason: 'network',
+        model: 'local-question-bank',
+      };
+    }
+  },
+
   async getAgentResponse(question, userAnswer, country, visaType, feedbackStyle = 'detailed', sessionContext = {}) {
     const localText = feedbackStyle === 'realistic'
       ? { text: 'Thank you. Please be ready to explain that with one concrete detail if asked.', feedback: null }

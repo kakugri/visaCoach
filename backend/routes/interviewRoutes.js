@@ -11,6 +11,7 @@ const agentResponseRateLimit = createRateLimiter({
 });
 
 // InterviewRoutes.js - Update with new endpoints
+router.post('/questions', agentResponseRateLimit, interviewController.getInterviewQuestions);
 router.post('/agent-response', agentResponseRateLimit, interviewController.getAgentResponse);
 router.get('/tips', interviewController.getPreInterviewTips);
 router.get('/common-mistakes', interviewController.getCommonMistakes);
@@ -41,6 +42,7 @@ router.post('/save-history', authMiddleware, async (req, res) => {
       concerns,
       feedbackLevel,
       stats,
+      questionSet,
     } = req.body;
     const userId = req.user.userId;
 
@@ -76,6 +78,7 @@ router.post('/save-history', authMiddleware, async (req, res) => {
       concerns,
       feedbackLevel,
       stats,
+      questionSet,
     });
 
     await user.save();

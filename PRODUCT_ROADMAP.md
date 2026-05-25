@@ -1,6 +1,6 @@
 # VisaCoach Product Roadmap
 
-Last updated: 2026-05-24
+Last updated: 2026-05-25
 
 VisaCoach starts as a visa interview practice tool, not a broad interview platform. The product should first become excellent at one short workflow:
 
@@ -156,7 +156,7 @@ Exit criteria:
 
 ## Milestone 6: Deployment
 
-Status: in progress. Deployment runbook, backend health checks, request IDs, structured request logging, runtime config validation, production env templates, and an Oracle Traefik deployment bundle are in place. Production hosting is not deployed yet.
+Status: live. VisaCoach is deployed at `https://visacoach.kakugri.dev` on the Oracle Traefik stack. Backend health, MongoDB, Google login, and Gemini feedback are working in production.
 
 Goal: make VisaCoach available to real users.
 
@@ -173,6 +173,7 @@ Deliverables:
 - Add production logging.
 - Add basic monitoring.
 - Add backup/export path for saved sessions.
+- Add Gemini quota fallback labeling and default to `gemini-2.5-flash-lite`.
 
 Exit criteria:
 
@@ -181,7 +182,45 @@ Exit criteria:
 - MongoDB sessions save in production.
 - No secrets are committed.
 
-## Milestone 7: Expansion Beyond Visa Interviews
+Remaining hardening:
+
+- Rotate any exposed Gemini keys after testing.
+- Decide whether to enable paid Gemini billing or add a secondary provider.
+- Add uptime and error monitoring beyond Docker logs.
+- Add a simple export path for saved sessions.
+
+## Milestone 7: Question Personalization And Profile Onboarding
+
+Status: in progress. The product now keeps the static question bank as a fallback while adding backend-generated personalized question sets when Gemini is available.
+
+Goal: make each practice session feel tailored without making the first-use flow slower or fragile.
+
+Design decisions:
+
+- Keep no-login practice as the fastest path to value.
+- Offer account creation before practice for users who already know they want saved history.
+- Keep static visa question banks as a reliable fallback.
+- Use Gemini to generate a five-question session from selected visa path and applicant context.
+- Label whether the question set came from Gemini or the question bank.
+- Do not let question generation block practice when Gemini quota is exhausted.
+
+Deliverables:
+
+- Add a backend question-generation endpoint.
+- Add frontend question-source labeling.
+- Add a "personalize questions with my context" control.
+- Add pre-practice sign-in/create-profile entry points.
+- Save question-set source metadata with account history.
+- Review whether static prep tips should also become model-generated or remain curated.
+
+Exit criteria:
+
+- Users can create a profile before starting practice.
+- Users can still practice without login.
+- Context-aware question sets work in production.
+- Gemini quota fallback remains clear and non-blocking.
+
+## Milestone 8: Expansion Beyond Visa Interviews
 
 Status: intentionally deferred.
 
@@ -206,10 +245,11 @@ Exit criteria:
 
 ## Current Priority
 
-Milestones 1 and 2 are implemented in the core no-login flow. Milestone 3 is now core-complete on the backend with structured feedback, visa-specific prompt profiles, validation, local fallback, and tests. Milestone 4 is complete for the current product scope. Milestone 5 is the active workstream, with Milestone 6 deployment prep started.
+Milestones 1 and 2 are implemented in the core no-login flow. Milestone 3 is now core-complete on the backend with structured feedback, visa-specific prompt profiles, validation, local fallback, and tests. Milestone 4 is complete for the current product scope. Milestone 6 is live. Milestone 5 polish and Milestone 7 personalization/profile onboarding are the active workstreams.
 
 Immediate next build priorities:
 
+- Finish question personalization and source labeling in production.
+- Revisit the prep screen layout now that profile-first and no-login-first are both supported.
 - Add frontend tests for summary generation, structured feedback rendering, and account prompts.
-- Complete the first live deployment on the Oracle Traefik stack.
 - Expand Playwright checks to cover live authenticated login and profile refresh behavior.

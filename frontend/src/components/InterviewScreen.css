@@ -65,6 +65,18 @@
   border: 1px solid rgba(13, 148, 136, 0.2);
 }
 
+.question-source-badge {
+  background-color: #f8fafc;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.question-source-badge.gemini {
+  background-color: #f0fdf4;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+
 .back-button {
   background-color: transparent;
   border: 1px solid #e2e8f0;
@@ -772,6 +784,13 @@
   background-color: #2563eb;
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
+}
+
+.start-interview-button:disabled {
+  cursor: wait;
+  background-color: #94a3b8;
+  transform: none;
+  box-shadow: none;
 }
 
 /* Interview Complete Styles */

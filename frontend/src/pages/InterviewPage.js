@@ -1,14 +1,16 @@
 /* InterviewPage.js */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CountrySelect from '../components/CountrySelect';
 import InterviewScreen from '../components/InterviewScreen';
 import logoSymbol from '../assets/images/logo-symbol.svg';
+import { UserContext } from '../App';
 import './InterviewPage.css';
 
 function InterviewPage() {
   const navigate = useNavigate();
+  const { isLoggedIn, user } = useContext(UserContext);
   const [selectedCountry, setSelectedCountry] = useState('');
   const [selectedVisaType, setSelectedVisaType] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -82,6 +84,16 @@ function InterviewPage() {
           </div>
           <div className="header-actions">
             <span className="mvp-badge">Practice MVP</span>
+            {isLoggedIn ? (
+              <button className="btn btn-outline" onClick={() => navigate('/history')}>
+                {user?.name ? 'Saved Sessions' : 'My Sessions'}
+              </button>
+            ) : (
+              <>
+                <button className="btn btn-outline" onClick={() => navigate('/login')}>Sign In</button>
+                <button className="btn btn-primary" onClick={() => navigate('/register')}>Create Profile</button>
+              </>
+            )}
             <button className="btn btn-outline" onClick={goToHome}>Home</button>
           </div>
         </div>
@@ -145,7 +157,14 @@ function InterviewPage() {
                     <div className="stat-label">Shareable Summary</div>
                   </div>
                 </div>
-                <button className="btn btn-cta" onClick={scrollToSelection}>Start Practice</button>
+                <div className="hero-actions">
+                  <button className="btn btn-cta" onClick={scrollToSelection}>Start Practice</button>
+                  {!isLoggedIn && (
+                    <button className="btn btn-secondary-cta" onClick={() => navigate('/register')}>
+                      Create Profile First
+                    </button>
+                  )}
+                </div>
                 <p className="practice-note">Practice support only. This does not predict or guarantee any visa decision.</p>
               </div>
               
