@@ -113,8 +113,8 @@ function InterviewPage() {
               </button>
             ) : (
               <>
-                <button className="btn btn-outline" onClick={() => navigate('/login')}>Sign In</button>
-                <button className="btn btn-primary" onClick={() => navigate('/register')}>Create Profile</button>
+                <button className="btn btn-outline" onClick={() => navigate('/login')}>Sign in</button>
+                <button className="btn btn-primary" onClick={() => navigate('/register')}>Create account</button>
               </>
             )}
             <button className="btn btn-outline" onClick={goToHome}>Home</button>
@@ -182,11 +182,6 @@ function InterviewPage() {
                 </div>
                 <div className="hero-actions">
                   <button className="btn btn-cta" onClick={scrollToSelection}>Choose Visa Path</button>
-                  {!isLoggedIn && (
-                    <button className="btn btn-secondary-cta" onClick={() => navigate('/register')}>
-                      Create Profile First
-                    </button>
-                  )}
                 </div>
                 <p className="practice-note">Practice support only. This does not predict or guarantee any visa decision.</p>
               </div>

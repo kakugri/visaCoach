@@ -535,6 +535,9 @@ test('renders the visa practice landing screen', async ({ page }) => {
 
   await expect(page.getByRole('heading', { name: /Practice a Visa Interview/i })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Choose Visa Path' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Create account' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Create Profile First' })).toHaveCount(0);
   await expect(page.getByText('Practice support only')).toBeVisible();
 
   await page.getByRole('button', { name: 'Choose Visa Path' }).click();
